@@ -22,6 +22,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+# import pickle
 import cPickle
 import logging
 import os
@@ -314,6 +315,8 @@ def get_train_test(data_path, test_on_dev=True, model=None,
         try:
             if os.path.exists(data_path):
                 with open(data_path) as f:
+                    # train_images_gan = pickle.load(f)
+                    # train_labels_gan = pickle.load(f)
                     train_images_gan = cPickle.load(f)
                     train_labels_gan = cPickle.load(f)
                 could_load = True
