@@ -138,6 +138,7 @@ def model_eval_gan(
         end = min(len(test_images), start + args.batch_size)
         cur_batch_size = end - start
 
+
         if cur_batch_size < args.batch_size:
             break
 
@@ -168,7 +169,7 @@ def model_eval_gan(
             assert adv_x is not None
             run_list += [recons_adv]
             run_list += [adv_x]
-
+        #TODO this is where it
         outs = sess.run(run_list, feed_dict=feed_dict)
         cur_acc = outs[0]
 

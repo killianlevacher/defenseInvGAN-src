@@ -107,6 +107,10 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, orig_data_flag=True)
 
+    SUB_BATCH_SIZE = batch_size
+    test_images = test_images[:SUB_BATCH_SIZE]
+    test_labels = test_labels[:SUB_BATCH_SIZE]
+
     sess = gan.sess
     # if defense_type == 'defense_gan':
     #     assert gan is not None
@@ -426,6 +430,7 @@ def main(cfg, argv=None):
     result_file_name = temp_fp
     sub_result_path = os.path.join(results_dir, result_file_name)
 
+
     accuracies = whitebox(
         gan, rec_data_path=FLAGS.rec_path,
         batch_size=FLAGS.batch_size,
@@ -530,9 +535,10 @@ if __name__ == '__main__':
     flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
     flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
 
+
     flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
 
-    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr] ")
+    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr] ")
     flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
     flags.DEFINE_boolean("debug", True, "True for saving reconstructions [False] original was False")
     flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")
