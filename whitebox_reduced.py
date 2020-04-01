@@ -263,7 +263,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     eval_acc = model_eval(sess, images_pl, labels_pl, preds_eval, test_images, test_labels,
                           args=eval_params)
-    print('[#] Eval acc: {}'.format(eval_acc))
+    print('[#] Non Adversarial Eval accuracy: {}'.format(eval_acc))
 
     reconstructor = get_reconstructor(gan)
 
@@ -362,7 +362,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         sess.run(tf.local_variables_initializer())
         acc_adv = model_eval(sess, images_pl, labels_pl, preds_adv, test_images, test_labels,
                              args=eval_params)
-        print('Test accuracy on adversarial examples: %0.4f\n' % acc_adv)
+        print('Test accuracy on adversarial examples with No defense: %0.4f\n' % acc_adv)
 
         return {'acc_adv': acc_adv,
                 'acc_rec': 0,
