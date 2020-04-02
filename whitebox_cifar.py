@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import _init_paths
 
 import argparse
-import cPickle
+import pickle
 import logging
 import os
 import sys
@@ -233,7 +233,8 @@ def main(cfg, argv=None):
     if accuracies[2]:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
         with open(pkl_result_path, 'w') as f:
-            cPickle.dump(accuracies[2], f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(accuracies[2], f)
+            # cPickle.dump(accuracies[2], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info in {}'.format(pkl_result_path))
 
 

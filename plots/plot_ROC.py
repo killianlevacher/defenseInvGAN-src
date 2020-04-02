@@ -1,7 +1,7 @@
 # Code for plotting accuracy vs reconstruction error
 
 import numpy as np
-import cPickle as pickle
+import pickle
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt

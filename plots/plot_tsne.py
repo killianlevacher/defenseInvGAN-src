@@ -1,13 +1,13 @@
-import cPickle
 from sklearn import manifold
 import matplotlib
+import pickle
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 filename = '/scratch0/defenseganv2/data/cache/cifar-10_recon/ours_feats.pkl'
 
 with open(filename) as f:
-    data_dict = cPickle.load(f)
+    data_dict = pickle.load(f)
 
 latents = data_dict['latents']
 

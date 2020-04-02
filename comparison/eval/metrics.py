@@ -1,4 +1,3 @@
-import cPickle
 import tensorflow as tf
 from classifiers.cifar_model import Model as CIFARModel
 import utils

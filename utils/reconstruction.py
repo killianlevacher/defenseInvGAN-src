@@ -1,6 +1,6 @@
 import os
 import time
-import cPickle
+import pickle
 import numpy as np
 
 import tensorflow as tf
@@ -131,7 +131,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
         try:
             if os.path.exists(feats_path) and not gan_model.test_again:
                 with open(feats_path) as f:
-                    all_recs = cPickle.load(f)
+                    all_recs = pickle.load(f)
                     could_load = True
                     print('[#] Successfully loaded features.')
             else:
@@ -169,7 +169,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
             for imp in im_paths:  # Load per image cached files.
                 try:
                     with open(imp) as f:
-                        loaded_rec = cPickle.load(f)
+                        loaded_rec = pickle.load(f)
                         batch_rec_list.append(loaded_rec)
                         # print('[-] Loaded batch {}'.format(ctr))
                 except:
@@ -193,7 +193,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
                 for i in range(len(recs)):
                     pkl_path = im_paths[i]
                     with open(pkl_path, 'w') as f:
-                        cPickle.dump(recs[i], f, protocol=cPickle.HIGHEST_PROTOCOL)
+                        pickle.dump(recs[i], f)
                         # print('[*] Saved reconstruction for {}'.format(pkl_path))
 
             all_targets.append(targets)
@@ -266,7 +266,7 @@ def evaluate_encoder(gan_model, output_name='all'):
     print(latents.shape)
 
     with open(filename, 'w') as f:
-        cPickle.dump(data_dict, f, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(data_dict, f)
 
 
 def encoder_reconstruct(gan_model):
@@ -333,7 +333,7 @@ def save_ds(gan_model):
 
         if os.path.exists(orig_imgs_pkl_path) and not gan_model.test_again:
             with open(orig_imgs_pkl_path) as f:
-                all_recs = cPickle.load(f)
+                all_recs = pickle.load(f)
                 could_load = True
                 print('[#] Dataset is already saved.')
                 return
@@ -351,5 +351,5 @@ def save_ds(gan_model):
         orig_imgs = np.concatenate(orig_imgs).reshape([-1] + gan_model.image_dim)
         all_targets = np.concatenate(all_targets)
         with open(orig_imgs_pkl_path, 'w') as f:
-            cPickle.dump(orig_imgs, f, cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(all_targets, f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(orig_imgs, f)
+            pickle.dump(all_targets, f)

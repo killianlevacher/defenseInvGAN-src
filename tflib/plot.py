@@ -7,7 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import collections
-import cPickle as pickle
+import pickle
 
 _since_beginning = collections.defaultdict(lambda: {})
 _since_last_flush = collections.defaultdict(lambda: {})
@@ -43,7 +43,7 @@ def flush():
         ensure_dir(base_dir)
         plt.savefig(fpath)
 
-    print "iter {}\t{}".format(_iter[0], "\t".join(prints))
+    print("iter {}\t{}".format(_iter[0], "\t".join(prints)))
     _since_last_flush.clear()
 
     with open('debug/log.pkl', 'wb') as f:

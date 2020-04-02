@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import cPickle as pickle
+import pickle
 from datasets.dataset import Dataset
 
 
