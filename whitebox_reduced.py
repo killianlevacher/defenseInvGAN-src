@@ -42,7 +42,8 @@ from cleverhans.utils import set_log_level, AccuracyReport
 from cleverhans.utils_tf import model_train, model_eval
 from models.gan_v2 import InvertorDefenseGAN
 from models.dataset_networks import get_generator_fn
-from utils.config import load_config, gan_from_config
+from models.gan_v2 import DefenseGANv2, InvertorDefenseGAN
+from utils.config import load_config
 from utils.gan_defense import model_eval_gan
 from utils.misc import ensure_dir
 from utils.network_builder import model_a, model_b, model_c, model_d, model_e, model_f, model_y, DefenseWrapper
@@ -132,11 +133,11 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     images_pl = tf.placeholder(tf.float32, shape=[None] + list(train_images.shape[1:]))
     labels_pl = tf.placeholder(tf.float32, shape=[None] + [train_labels.shape[1]])
 
-    if num_tests > 0:
+    if num_tests > 0: #TODO not used 3
         test_images = test_images[:num_tests]
         test_labels = test_labels[:num_tests]
 
-    if num_train > 0:
+    if num_train > 0:#TODO not used 3
         train_images = train_images[:num_train]
         train_labels = train_labels[:num_train]
 
@@ -153,7 +154,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         preds_train = model.get_logits(images_pl_transformed, dropout=True)
         preds_eval = model.get_logits(images_pl_transformed)
 
-    elif gan.dataset_name == 'cifar-10':
+    elif gan.dataset_name == 'cifar-10':#TODO not used 3
         images_pl_transformed = images_pl
         pre_model = Model('classifiers/model/cifar-10', tiny=False, mode='eval', sess=sess)
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
@@ -162,7 +163,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         used_vars = [x for x in tf.global_variables() if x.name.startswith('model')]
         preds_eval = model.get_logits(images_pl_transformed)
 
-    elif gan.dataset_name == 'celeba':
+    elif gan.dataset_name == 'celeba':#TODO not used 3
         images_pl_transformed = tf.cast(images_pl, tf.float32) / 255. * 2. - 1.
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             model = model_y(input_shape=x_shape, nb_classes=train_labels.shape[1])
@@ -172,7 +173,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         preds_eval = model.get_logits(images_pl_transformed)
 
     # Creating BPDA model
-    if attack_type in ['bpda', 'bpda-pgd']:
+    if attack_type in ['bpda', 'bpda-pgd']: #TODO not used 3
         gan_bpda = InvertorDefenseGAN(
             get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
             test_mode=True)
@@ -215,7 +216,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     }
 
     preds_adv = None
-    if FLAGS.defense_type == 'adv_tr':
+    if FLAGS.defense_type == 'adv_tr': #TODO not used 3
         attack_params = {'eps': FLAGS.fgsm_eps_tr,
                          'clip_min': 0.,
                          'clip_max': 1.}
@@ -240,13 +241,13 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
             print('[-] Cannot load classifier ...')
             classifier_load_success = False
 
-    if classifier_load_success == False:
+    if classifier_load_success == False:#TODO not used 3
         print('[+] Training classifier model ...')
         model_train(sess, images_pl, labels_pl, preds_train, train_images, train_labels,
                 args=train_params, rng=rng, predictions_adv=preds_adv,
                 init_all=False, evaluate=evaluate, save=False)
 
-    if attack_type in ['bpda', 'bpda-pgd']:
+    if attack_type in ['bpda', 'bpda-pgd']:#TODO not used 3
         # Initialize attack model weights with trained model
         path = tf.train.latest_checkpoint('classifiers/model/{}'.format(gan.dataset_name))
         saver = tf.train.Saver(var_list=attack_used_vars)
@@ -274,7 +275,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     if attack_type is None:
         return eval_acc, 0, None
 
-    if 'rand' in FLAGS.attack_type:
+    if 'rand' in FLAGS.attack_type:#TODO not used 3
         test_images = np.clip(
             test_images + args.alpha * np.sign(np.random.randn(*test_images.shape)),
             min_val, 1.0)
@@ -283,7 +284,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     if 'fgsm' in FLAGS.attack_type:
         attack_params = {'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.}
         attack_obj = FastGradientMethod(model, sess=sess)
-    elif FLAGS.attack_type == 'cw':
+    elif FLAGS.attack_type == 'cw':#TODO not used 2
         attack_obj = CarliniWagnerL2(model, sess=sess)
         attack_params = {'binary_search_steps': 6,
                          'max_iterations': attack_iterations,
@@ -293,23 +294,23 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
                          'clip_max': 1.,
                          'initial_const': 10.0}
 
-    elif FLAGS.attack_type == 'madry':
+    elif FLAGS.attack_type == 'madry':#TODO not used 3
         attack_obj = MadryEtAl(model, sess=sess)
         attack_params = {'eps': eps, 'eps_iter': eps / 4.0, 'clip_min': min_val, 'clip_max': 1.,
                          'ord': np.inf, 'nb_iter': attack_iterations}
     
-    elif FLAGS.attack_type == 'bpda':
+    elif FLAGS.attack_type == 'bpda':#TODO not used 3
         # BPDA + FGSM
         attack_params = {'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.}
         attack_obj = FastGradientMethod(attack_model, sess=sess)
 
-    elif FLAGS.attack_type == 'bpda-pgd':
+    elif FLAGS.attack_type == 'bpda-pgd':#TODO not used 3
         # BPDA + PGD
         attack_params = {'eps': eps, 'eps_iter': eps / 4.0, 'clip_min': min_val, 'clip_max': 1.,
                          'ord': np.inf, 'nb_iter': attack_iterations}
         attack_obj = MadryEtAl(attack_model, sess=sess)
 
-    elif FLAGS.attack_type == 'bpda-l2':
+    elif FLAGS.attack_type == 'bpda-l2':#TODO not used 3
         # default: lr=1.0, c=0.1
         attack_obj = BPDAL2(model, reconstructor, sess=sess)
         attack_params = {'binary_search_steps': search_steps,
@@ -376,6 +377,21 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
 import re
 
+def gan_from_config(cfg, test_mode):
+# from config.py
+    if cfg['TYPE'] == 'v2':
+        gan = DefenseGANv2(
+            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            test_mode=test_mode,
+        )
+    elif cfg['TYPE'] == 'inv':
+        gan = InvertorDefenseGAN(
+            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            test_mode=test_mode,
+        )
+    else:
+        gan = DefenseGANBase(cfg=cfg, test_mode=test_mode)
+    return gan
 
 def main(cfg, argv=None):
     FLAGS = tf.app.flags.FLAGS
@@ -395,6 +411,7 @@ def main(cfg, argv=None):
 
             # Extract hyperparameters from reconstruction path.
             if FLAGS.rec_path is not None:
+                # TODO NOT USED 3
                 train_param_re = re.compile('recs_rr(.*)_lr(.*)_iters(.*)')
                 [tr_rr, tr_lr, tr_iters] = \
                     train_param_re.findall(FLAGS.rec_path)[0]
@@ -405,11 +422,12 @@ def main(cfg, argv=None):
                 assert FLAGS.online_training or not FLAGS.train_on_recs
 
     if gan is None:
+        # TODO NOT USED 2 - USED FOR NO DEFENCE
         gan = gan_from_config(cfg, True)
         gan.load_model()
         # gan = DefenseGANBase(cfg=cfg, test_mode=True)
 
-    if FLAGS.override:
+    if FLAGS.override: # TODO NOT USED 3
         gan.rec_rr = int(tr_rr)
         gan.rec_lr = float(tr_lr)
         gan.rec_iters = int(tr_iters)
@@ -538,7 +556,7 @@ if __name__ == '__main__':
 
     flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
 
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr] ")
+    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr] ")
     flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
     flags.DEFINE_boolean("debug", True, "True for saving reconstructions [False] original was False")
     flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")

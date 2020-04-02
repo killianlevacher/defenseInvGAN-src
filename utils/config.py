@@ -99,6 +99,7 @@ def load_config(cfg_path, set_flag=False, verbose=False):
 
 
 def gan_from_config(cfg, test_mode):
+# from config.py
     if cfg['TYPE'] == 'v2':
         gan = DefenseGANv2(
             get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,

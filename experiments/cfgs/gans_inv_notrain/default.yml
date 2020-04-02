@@ -1,4 +1,5 @@
-TYPE: 'inv'
+#TYPE: 'inv'
+TYPE: 'v2'
 MODE: 'wgan-gp'
 BATCH_SIZE: 32
 USE_BN: False

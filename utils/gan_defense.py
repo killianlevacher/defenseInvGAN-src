@@ -220,5 +220,5 @@ def model_eval_gan(
     roc_info = [all_labels, preds, diffs, z_norms]
     if diff_op is not None:
         return accuracy, diffs_mean, roc_info
-    else:
+    else: #TODO not used
         return accuracy, roc_info
