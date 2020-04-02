@@ -30,7 +30,7 @@ FLAGS = tf.app.flags.FLAGS
 type_to_define_fn = {int: tf.app.flags.DEFINE_integer,
                      float: tf.app.flags.DEFINE_float,
                      bool: tf.app.flags.DEFINE_boolean,
-                     basestring: tf.app.flags.DEFINE_string,
+                     str: tf.app.flags.DEFINE_string,
                      str: tf.app.flags.DEFINE_string,
                      type(None): tf.app.flags.DEFINE_integer,
                      tuple: tf.app.flags.DEFINE_list,
