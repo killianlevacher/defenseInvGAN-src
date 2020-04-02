@@ -353,9 +353,9 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
             z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAGS.debug, vis_dir=_get_vis_dir(gan, 'clean'))
 
         # print('Training accuracy: {}'.format(train_acc))
-        print('Evaluation accuracy: {}'.format(eval_acc))
-        print('Evaluation accuracy with reconstruction: {}'.format(acc_rec))
-        print('Test accuracy on adversarial examples: %0.4f\n' % acc_adv)
+        print('Non Adversarial Eval accuracy: {}'.format(eval_acc))
+        print('Adversarial eval accuracy: %0.4f' % acc_adv)
+        print('Evaluation accuracy with defence: {}'.format(acc_rec))
 
         return {'acc_adv': acc_adv,
                 'acc_rec': acc_rec,
