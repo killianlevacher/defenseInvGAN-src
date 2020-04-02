@@ -46,8 +46,14 @@ from models.gan_v2 import DefenseGANv2, InvertorDefenseGAN
 from utils.config import load_config
 from utils.gan_defense import model_eval_gan
 from utils.misc import ensure_dir
-from utils.network_builder import model_a, model_b, model_c, model_d, model_e, model_f, model_y, DefenseWrapper
+from utils.network_builder import model_a
 
+################# PARAMS
+DEFENSE_TYPE = "none"
+# DEFENSE_TYPE = "defense_gan"
+
+
+#################
 orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
 attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0},
                       'f-mnist': {'eps': 0.3, 'clip_min': 0},
@@ -113,16 +119,6 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     test_labels = test_labels[:SUB_BATCH_SIZE]
 
     sess = gan.sess
-    # if defense_type == 'defense_gan':
-    #     assert gan is not None
-    #     sess = gan.sess
-    #
-    #     if FLAGS.train_on_recs:
-    #         assert rec_data_path is not None or online_training
-    # else:
-    #     config = tf.ConfigProto()
-    #     config.gpu_options.allow_growth = True
-    #     sess = tf.Session(config=config)
 
     # Classifier is trained on either original data or reconstructed data.
     # During testing, the input image will be reconstructed by GAN.
@@ -135,10 +131,10 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     # Creating classificaion model
     images_pl_transformed = images_pl
-    models = {'A': model_a, 'B': model_b, 'C': model_c, 'D': model_d, 'E': model_e, 'F': model_f}
+    model = model_a
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-        model = models[FLAGS.model](input_shape=x_shape, nb_classes=train_labels.shape[1])
+        model = model(input_shape=x_shape, nb_classes=train_labels.shape[1])
 
     used_vars = model.get_params()
     preds_train = model.get_logits(images_pl_transformed, dropout=True)
@@ -160,7 +156,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         'batch_size': batch_size,
         'learning_rate': learning_rate,
         'train_dir': 'classifiers/model/{}'.format(gan.dataset_name),
-        'filename': 'model_{}'.format(FLAGS.model)
+        'filename': 'model_a'
     }
 
     preds_adv = None
@@ -200,7 +196,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     adv_x = attack_obj.generate(images_pl_transformed, **attack_params)
 
-    if FLAGS.defense_type == 'defense_gan':
+    if DEFENSE_TYPE == 'defense_gan':
 
         recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123)
 
@@ -280,8 +276,8 @@ def main(cfg, argv=None):
     [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
 
     gan = None
-    if FLAGS.defense_type.lower() != 'none':
-        if FLAGS.defense_type == 'defense_gan':
+    if DEFENSE_TYPE.lower() != 'none':
+        if DEFENSE_TYPE == 'defense_gan':
             gan = gan_from_config(cfg, True)
 
             gan.load_model()
@@ -320,7 +316,7 @@ def main(cfg, argv=None):
         nb_epochs=FLAGS.nb_epochs,
         eps=FLAGS.fgsm_eps,
         online_training=FLAGS.online_training,
-        defense_type=FLAGS.defense_type,
+        defense_type=DEFENSE_TYPE,
         num_tests=FLAGS.num_tests,
         attack_type=FLAGS.attack_type,
         num_train=FLAGS.num_train,
@@ -350,9 +346,9 @@ def _get_results_dir_filename(gan):
     FLAGS = tf.flags.FLAGS
 
     results_dir = os.path.join('results', 'whitebox_{}_{}'.format(
-        FLAGS.defense_type, FLAGS.dataset_name))
+        DEFENSE_TYPE, FLAGS.dataset_name))
 
-    if FLAGS.defense_type == 'defense_gan':
+    if DEFENSE_TYPE == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
         result_file_name = \
             'Iter={}_RR={:d}_LR={:.4f}_defense_gan'.format(
@@ -364,8 +360,6 @@ def _get_results_dir_filename(gan):
 
         if not FLAGS.train_on_recs:
             result_file_name = 'orig_' + result_file_name
-    elif FLAGS.defense_type == 'adv_tr':
-        result_file_name = 'advTrEps={:.2f}'.format(FLAGS.fgsm_eps_tr)
     else:
         result_file_name = 'nodefense_'
     if FLAGS.num_tests > -1:
@@ -415,7 +409,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
 
     # KEEP
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr] ")
+    # flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr] ")
 
     ######
 
