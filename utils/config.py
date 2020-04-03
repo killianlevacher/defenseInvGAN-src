@@ -74,26 +74,27 @@ def load_config(cfg_path, set_flag=False, verbose=False):
         docs = yaml.load(f)
 
     tf.app.flags.DEFINE_string('cfg_path', cfg_path, 'config path.')
-    for (k, v) in cfg.items():
-        if set_flag:
-            setattr(flags, k.lower(), v)
-        else:
-            if hasattr(flags, k.lower()):
-                setattr(flags, k.lower(), v)
-            else:
-                def_func = type_to_define_fn[type(v)]
 
-                try:
-                    def_func(k.lower(), v, docs[k])
-                except KeyError:
-                    'Doc for the key {} is not found in the ' \
-                    'experimets/cfgs/key_doc.yml'.format(
-                        k)
-                    def_func(k.lower(), v, 'No doc')
-        if verbose:
-            print('[#] set {} to {} type: {}'.format(k.lower(), v['val'],
-                                                     str(type(
-                                                         v['val']))))
+    # for (k, v) in cfg.items():
+    #     if set_flag:
+    #         setattr(flags, k.lower(), v)
+    #     else:
+    #         if hasattr(flags, k.lower()):
+    #             setattr(flags, k.lower(), v)
+    #         else:
+    #             def_func = type_to_define_fn[type(v)]
+    #
+    #             try:
+    #                 def_func(k.lower(), v, docs[k])
+    #             except KeyError:
+    #                 'Doc for the key {} is not found in the ' \
+    #                 'experimets/cfgs/key_doc.yml'.format(
+    #                     k)
+    #                 def_func(k.lower(), v, 'No doc')
+    #     if verbose:
+    #         print('[#] set {} to {} type: {}'.format(k.lower(), v['val'],
+    #                                                  str(type(
+    #                                                      v['val']))))
     cfg['cfg_path'] = cfg_path
     return cfg
 

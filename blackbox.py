@@ -313,11 +313,9 @@ def get_train_test(data_path, test_on_dev=True, model=None,
         could_load = False
         try:
             if os.path.exists(data_path):
-                with open(data_path) as f:
+                with open(data_path,'rb') as f:
                     train_images_gan = pickle.load(f)
                     train_labels_gan = pickle.load(f)
-                    # train_images_gan = cPickle.load(f)
-                    # train_labels_gan = cPickle.load(f)
                 could_load = True
             else:
                 print('[!] Run python train.py --cfg <path-to-cfg> --save_ds to prepare the dataset cache files.')

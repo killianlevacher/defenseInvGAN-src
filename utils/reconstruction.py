@@ -331,12 +331,12 @@ def save_ds(gan_model):
         ensure_dir(output_dir)
         orig_imgs_pkl_path = os.path.join(output_dir, 'feats.pkl'.format(split))
 
-        if os.path.exists(orig_imgs_pkl_path) and not gan_model.test_again:
-            with open(orig_imgs_pkl_path) as f:
-                all_recs = pickle.load(f)
-                could_load = True
-                print('[#] Dataset is already saved.')
-                return
+        # if os.path.exists(orig_imgs_pkl_path) and not gan_model.test_again:
+        #     with open(orig_imgs_pkl_path) as f:
+        #         all_recs = pickle.load(f)
+        #         could_load = True
+        #         print('[#] Dataset is already saved.')
+        #         return
 
         gen_func = getattr(gan_model, '{}_gen_test'.format(split))
         all_targets = []
@@ -350,6 +350,6 @@ def save_ds(gan_model):
             all_targets.append(targets)
         orig_imgs = np.concatenate(orig_imgs).reshape([-1] + gan_model.image_dim)
         all_targets = np.concatenate(all_targets)
-        with open(orig_imgs_pkl_path, 'w') as f:
+        with open(orig_imgs_pkl_path, 'wb') as f:
             pickle.dump(orig_imgs, f)
             pickle.dump(all_targets, f)

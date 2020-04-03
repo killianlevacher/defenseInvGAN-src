@@ -322,7 +322,7 @@ class DefenseGANv2(AbstractModel):
         )
         self.save_image(samples, 'sanity_check.png')
 
-        for iteration in xrange(cur_iter, max_train_iters):
+        for iteration in range(cur_iter, max_train_iters):
             start_time = time.time()
             _data = data_generator.next()
 
