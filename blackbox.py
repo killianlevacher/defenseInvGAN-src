@@ -22,7 +22,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import cPickle
+import pickle
 import logging
 import os
 import re
@@ -314,8 +314,8 @@ def get_train_test(data_path, test_on_dev=True, model=None,
         try:
             if os.path.exists(data_path):
                 with open(data_path) as f:
-                    train_images_gan = cPickle.load(f)
-                    train_labels_gan = cPickle.load(f)
+                    train_images_gan = pickle.load(f)
+                    train_labels_gan = pickle.load(f)
                 could_load = True
             else:
                 print('[!] Run python train.py --cfg <path-to-cfg> --save_ds to prepare the dataset cache files.')
@@ -708,13 +708,13 @@ def main(cfg, argv=None):
     if accuracies['roc_info_adv']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
         with open(pkl_result_path, 'w') as f:
-            cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(accuracies['roc_info_adv'], f)
             print('[*] saved roc_info in {}'.format(pkl_result_path))
 
     if accuracies['roc_info_rec']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc_clean.pkl')
         with open(pkl_result_path, 'w') as f:
-            cPickle.dump(accuracies['roc_info_rec'], f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(accuracies['roc_info_rec'], f)
             print('[*] saved roc_info_clean in {}'.format(pkl_result_path))
 
 

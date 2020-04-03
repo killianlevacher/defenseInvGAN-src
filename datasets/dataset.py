@@ -20,7 +20,7 @@
 
 defined here."""
 
-import cPickle
+import pickle
 import os
 
 import numpy as np
@@ -204,7 +204,7 @@ class PickleLazyDataset(LazyDataset):
 
     def _get_image(self, filepath):
         with open(filepath) as f:
-            return cPickle.load(f).reshape(self.image_shape)
+            return pickle.load(f).reshape(self.image_shape)
 
     @property
     def shape(self):

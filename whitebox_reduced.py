@@ -24,7 +24,7 @@ from __future__ import unicode_literals
 import _init_paths
 
 import argparse
-import cPickle
+import pickle
 import logging
 import os
 import sys
@@ -290,8 +290,8 @@ def gan_from_config(cfg, test_mode):
             get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
             test_mode=test_mode,
         )
-    else:
-        gan = DefenseGANBase(cfg=cfg, test_mode=test_mode)
+    # else:
+        # gan = DefenseGANBase(cfg=cfg, test_mode=test_mode)
     return gan
 
 def main(cfg, argv=None):
@@ -360,13 +360,13 @@ def main(cfg, argv=None):
     if accuracies['roc_info_adv']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
         with open(pkl_result_path, 'w') as f:
-            cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(accuracies['roc_info_adv'], f)
             print('[*] saved roc_info in {}'.format(pkl_result_path))
 
     if accuracies['roc_info_rec']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc_clean.pkl')
         with open(pkl_result_path, 'w') as f:
-            cPickle.dump(accuracies['roc_info_rec'], f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(accuracies['roc_info_rec'], f)
             print('[*] saved roc_info_clean in {}'.format(pkl_result_path))
 
 
