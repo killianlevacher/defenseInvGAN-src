@@ -377,8 +377,7 @@ def main(cfg, argv=None):
 def _get_results_dir_filename(gan):
     FLAGS = tf.flags.FLAGS
 
-    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(
-        FLAGS.defense_type, FLAGS.dataset_name))
+    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(FLAGS.defense_type,"mnist"))
 
     if FLAGS.defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
