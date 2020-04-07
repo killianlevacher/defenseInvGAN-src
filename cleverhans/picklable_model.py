@@ -184,7 +184,7 @@ class Linear(Layer):
     if self.init_mode == "norm":
       init = tf.random_normal([dim, self.num_hid], dtype=tf.float32)
       init = init / tf.sqrt(1e-7 + tf.reduce_sum(tf.square(init), axis=0,
-                                                 keep_dims=True))
+                                                 keepdims=True))
       init = init * self.init_scale
     elif self.init_mode == "uniform_unit_scaling":
       scale = np.sqrt(3. / dim)
@@ -752,7 +752,7 @@ class GroupNorm(Layer):
     shape = tf.shape(x)
     batch_size = shape[0]
     x = tf.reshape(x, (batch_size,) + self.expanded_shape)
-    mean, var = tf.nn.moments(x, [1, 2, 3], keep_dims=True)
+    mean, var = tf.nn.moments(x, [1, 2, 3], keepdims=True)
     x = (x - mean) * tf.rsqrt(var + self.eps)
     x = tf.reshape(x, shape)
     x = x * self.gamma.var + self.beta.var
@@ -784,7 +784,7 @@ class BatchNorm(Layer):
                    )
 
   def fprop(self, x, **kwargs):
-    mean, var = tf.nn.moments(x, [0, 1, 2], keep_dims=True)
+    mean, var = tf.nn.moments(x, [0, 1, 2], keepdims=True)
     x = (x - mean) * tf.rsqrt(var + self.eps)
     x = x * self.gamma.var + self.beta.var
     return x

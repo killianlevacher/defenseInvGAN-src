@@ -211,7 +211,7 @@ class ConditionalBatchNorm(object):
             decay = self.decay_rate
             variance_epsilon = 1E-5
             if is_training:
-                mean, variance = tf.nn.moments(inputs, axis, keep_dims=True)
+                mean, variance = tf.nn.moments(inputs, axis, keepdims=True)
                 update_mean = tf.assign(self.moving_mean, self.moving_mean * decay + mean * (1 - decay))
                 update_var = tf.assign(self.moving_var, self.moving_var * decay + variance * (1 - decay))
                 #tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_mean)
