@@ -454,7 +454,7 @@ if __name__ == '__main__':
                          'Number of random sampling for testing the classifier.')
     flags.DEFINE_boolean("online_training", False,
                          "Train the base classifier on reconstructions.")
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
+    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
     flags.DEFINE_string("attack_type", "none", "Type of attack [fgsm|cw|bpda]")
     flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
     flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
