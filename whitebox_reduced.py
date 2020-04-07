@@ -224,7 +224,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     adv_x = attack_obj.generate(images_pl_transformed, **attack_params)
 
-    if cfg["TYPE"] == 'defense_gan':
+    if FLAGS.defense_type == 'defense_gan':
 
         recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123)
 
@@ -306,8 +306,8 @@ def main(cfg, argv=None):
     [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
 
     gan = None
-    if cfg['TYPE'].lower() != 'none':
-        if cfg['TYPE'] == 'defense_gan':
+    if FLAGS.defense_type.lower() != 'none':
+        if FLAGS.defense_type == 'defense_gan':
             gan = gan_from_config(cfg, True)
 
             gan.load_model()
@@ -323,7 +323,7 @@ def main(cfg, argv=None):
         # gan = DefenseGANBase(cfg=cfg, test_mode=True)
 
     # Setting the results directory.
-    results_dir, result_file_name = _get_results_dir_filename(cfg, gan)
+    results_dir, result_file_name = _get_results_dir_filename(gan)
 
     # Result file name. The counter ensures we are not overwriting the
     # results.
@@ -374,13 +374,13 @@ def main(cfg, argv=None):
             print('[*] saved roc_info_clean in {}'.format(pkl_result_path))
 
 
-def _get_results_dir_filename(cfg, gan):
+def _get_results_dir_filename(gan):
     FLAGS = tf.flags.FLAGS
 
     results_dir = os.path.join('results', 'whitebox_{}_{}'.format(
-        cfg['TYPE'], cfg["DATASET_NAME"]))
+        FLAGS.defense_type, FLAGS.dataset_name))
 
-    if cfg['TYPE'] == 'defense_gan':
+    if FLAGS.defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
         result_file_name = \
             'Iter={}_RR={:d}_LR={:.4f}_defense_gan'.format(
