@@ -455,16 +455,16 @@ if __name__ == '__main__':
     flags.DEFINE_boolean("online_training", False,
                          "Train the base classifier on reconstructions.")
     flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
-    flags.DEFINE_string("attack_type", "none", "Type of attack [fgsm|cw|bpda]")
+    flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
     flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
     flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
-    flags.DEFINE_string("results_dir", "result_subdir", "The final subdirectory of the results.")
+    flags.DEFINE_string("results_dir", "whitebox", "The final subdirectory of the results.")
     flags.DEFINE_boolean("same_init", False, "Same initialization for z_hats.")
-    flags.DEFINE_string("model", "F", "The classifier model.")
+    flags.DEFINE_string("model", "A", "The classifier model.")
     flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
     flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
     flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
-    flags.DEFINE_boolean("load_classifier", False, "True for loading from saved classifier models [False]")
+    flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
     flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")
     flags.DEFINE_boolean("override", False, "Overriding the config values of reconstruction "
                                             "hyperparameters. It has to be true if either "
