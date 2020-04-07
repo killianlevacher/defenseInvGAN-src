@@ -30,7 +30,7 @@ def main():
     # Curve params
     num_disc = 100 # Number of discretizations
 
-    with open(opt.pkl_file) as f:
+    with open(opt.pkl_file,'rb') as f:
         roc_info = pickle.load(f)
 
     [all_labels, preds, diffs, z_norms] = roc_info

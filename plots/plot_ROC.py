@@ -30,10 +30,10 @@ def main():
     results_path = os.path.join(os.path.dirname(opt.pkl_file_adv), results_fname)
     mkdirp(results_path)
 
-    with open(opt.pkl_file_adv) as f:
+    with open(opt.pkl_file_adv,'rb') as f:
         roc_info_adv = pickle.load(f)
 
-    with open(opt.pkl_file_clean) as f:
+    with open(opt.pkl_file_clean,'rb') as f:
         roc_info_clean = pickle.load(f)
 
     [all_labels_adv, preds_adv, diffs_adv, z_norms_adv] = roc_info_adv

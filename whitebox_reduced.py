@@ -49,7 +49,7 @@ from utils.misc import ensure_dir
 from utils.network_builder import model_a
 
 ################# PARAMS
-DEFENSE_TYPE = "none"
+# DEFENSE_TYPE = "none"
 # DEFENSE_TYPE = "defense_gan"
 DEBUG=True
 DETECT_IMAGE = False
@@ -224,7 +224,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     adv_x = attack_obj.generate(images_pl_transformed, **attack_params)
 
-    if DEFENSE_TYPE == 'defense_gan':
+    if cfg["TYPE"] == 'defense_gan':
 
         recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123)
 
@@ -306,8 +306,8 @@ def main(cfg, argv=None):
     [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
 
     gan = None
-    if DEFENSE_TYPE.lower() != 'none':
-        if DEFENSE_TYPE == 'defense_gan':
+    if cfg['TYPE'].lower() != 'none':
+        if cfg['TYPE'] == 'defense_gan':
             gan = gan_from_config(cfg, True)
 
             gan.load_model()
@@ -346,7 +346,7 @@ def main(cfg, argv=None):
         nb_epochs=FLAGSnb_epochs,
         eps=FLAGSfgsm_eps,
         online_training=FLAGSonline_training,
-        defense_type=DEFENSE_TYPE,
+        defense_type=cfg["TYPE"],
         num_tests=FLAGSnum_tests,
         attack_type=FLAGSattack_type,
         num_train=FLAGSnum_train,
@@ -361,14 +361,14 @@ def main(cfg, argv=None):
 
     if accuracies['roc_info_adv']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
-        with open(pkl_result_path, 'w') as f:
+        with open(pkl_result_path, 'wb') as f:
             pickle.dump(accuracies['roc_info_adv'], f)
             # cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info in {}'.format(pkl_result_path))
 
     if accuracies['roc_info_rec']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc_clean.pkl')
-        with open(pkl_result_path, 'w') as f:
+        with open(pkl_result_path, 'wb') as f:
             pickle.dump(accuracies['roc_info_rec'], f)
             # cPickle.dump(accuracies['roc_info_rec'], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info_clean in {}'.format(pkl_result_path))
@@ -378,9 +378,9 @@ def _get_results_dir_filename(cfg, gan):
     FLAGS = tf.flags.FLAGS
 
     results_dir = os.path.join('results', 'whitebox_{}_{}'.format(
-        DEFENSE_TYPE, cfg["DATASET_NAME"]))
+        cfg['TYPE'], cfg["DATASET_NAME"]))
 
-    if DEFENSE_TYPE == 'defense_gan':
+    if cfg['TYPE'] == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
         result_file_name = \
             'Iter={}_RR={:d}_LR={:.4f}_defense_gan'.format(

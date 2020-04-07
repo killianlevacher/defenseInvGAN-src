@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 filename = '/scratch0/defenseganv2/data/cache/cifar-10_recon/ours_feats.pkl'
 
-with open(filename) as f:
+with open(filename, "rb") as f:
     data_dict = pickle.load(f)
 
 latents = data_dict['latents']

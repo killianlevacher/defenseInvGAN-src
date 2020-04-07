@@ -94,7 +94,7 @@ def main(cfg, *args):
     logfile.close()
 
     pickle_filename = os.path.join(results_dir, 'roc_lr_{}_iters_{}.pkl'.format(gan.rec_lr, gan.rec_iters))
-    with open(pickle_filename, 'w') as f:
+    with open(pickle_filename, 'wb') as f:
         pickle.dump(roc_info, f)
         # cPickle.dump(roc_info, f, cPickle.HIGHEST_PROTOCOL)
         print('[*] saved roc_info in {}'.format(pickle_filename))

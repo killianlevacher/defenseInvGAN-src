@@ -203,7 +203,7 @@ class PickleLazyDataset(LazyDataset):
         return len(self.filepaths)
 
     def _get_image(self, filepath):
-        with open(filepath) as f:
+        with open(filepath,"rb") as f:
             return pickle.load(f).reshape(self.image_shape)
             # return cPickle.load(f).reshape(self.image_shape)
 

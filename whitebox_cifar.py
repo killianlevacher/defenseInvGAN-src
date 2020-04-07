@@ -232,7 +232,7 @@ def main(cfg, argv=None):
 
     if accuracies[2]:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
-        with open(pkl_result_path, 'w') as f:
+        with open(pkl_result_path, 'wb') as f:
             pickle.dump(accuracies[2], f)
             # cPickle.dump(accuracies[2], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info in {}'.format(pkl_result_path))

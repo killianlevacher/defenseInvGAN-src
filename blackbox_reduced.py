@@ -313,7 +313,7 @@ def get_train_test(data_path, test_on_dev=True, model=None,
         could_load = False
         try:
             if os.path.exists(data_path):
-                with open(data_path) as f:
+                with open(data_path,'rb') as f:
                     train_images_gan = pickle.load(f)
                     train_labels_gan = pickle.load(f)
                     # train_images_gan = cPickle.load(f)
@@ -716,7 +716,7 @@ def main(cfg, argv=None):
 
     if accuracies['roc_info_rec']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc_clean.pkl')
-        with open(pkl_result_path, 'w') as f:
+        with open(pkl_result_path, 'wb') as f:
             pickle.dump(accuracies['roc_info_rec'], f)
             # cPickle.dump(accuracies['roc_info_rec'], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info_clean in {}'.format(pkl_result_path))

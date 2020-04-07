@@ -46,7 +46,8 @@ class Reconstructor(object):
         self.z_hats_recs = gan.generator_fn(z_init + modifier, is_training=False)
 
         num_dim = len(self.z_hats_recs.get_shape())
-        axes = range(1, num_dim)
+        #P2 version axes = range(1, num_dim) - fix: https://github.com/WojciechMormul/gan/issues/3
+        axes = list(range(1, num_dim))
 
         self.image_rec_loss = tf.reduce_mean(tf.square(self.z_hats_recs - timg_tiled_rr), axis=axes)
         rec_loss = tf.reduce_sum(self.image_rec_loss)
@@ -130,7 +131,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
         could_load = False
         try:
             if os.path.exists(feats_path) and not gan_model.test_again:
-                with open(feats_path) as f:
+                with open(feats_path, "rb") as f:
                     all_recs = pickle.load(f)
                     could_load = True
                     print('[#] Successfully loaded features.')
@@ -168,7 +169,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
 
             for imp in im_paths:  # Load per image cached files.
                 try:
-                    with open(imp) as f:
+                    with open(imp, "rb") as f:
                         loaded_rec = pickle.load(f)
                         batch_rec_list.append(loaded_rec)
                         # print('[-] Loaded batch {}'.format(ctr))
@@ -192,7 +193,7 @@ def reconstruct_dataset(gan_model, ckpt_path=None, max_num=-1, max_num_load=-1):
             if not batch_could_load and not could_load:
                 for i in range(len(recs)):
                     pkl_path = im_paths[i]
-                    with open(pkl_path, 'w') as f:
+                    with open(pkl_path, 'wb') as f:
                         pickle.dump(recs[i], f)
                         # print('[*] Saved reconstruction for {}'.format(pkl_path))
 
@@ -265,7 +266,7 @@ def evaluate_encoder(gan_model, output_name='all'):
     print(recon_images.shape)
     print(latents.shape)
 
-    with open(filename, 'w') as f:
+    with open(filename, 'wb') as f:
         pickle.dump(data_dict, f)
 
 
