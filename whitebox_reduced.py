@@ -443,6 +443,10 @@ if __name__ == '__main__':
     # flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
     flags = tf.app.flags
 
+    flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
+    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
+    flags.DEFINE_string("model", "A", "The classifier model.")
+
     flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
     flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training.')
     flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train model.')
@@ -452,15 +456,14 @@ if __name__ == '__main__':
     flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
     flags.DEFINE_integer('random_test_iter', -1,
                          'Number of random sampling for testing the classifier.')
-    flags.DEFINE_boolean("online_training", False,
-                         "Train the base classifier on reconstructions.")
-    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
-    flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
+    flags.DEFINE_boolean("online_training", False, "Train the base classifier on reconstructions.")
+
+
     flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
     flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
     flags.DEFINE_string("results_dir", "whitebox", "The final subdirectory of the results.")
     flags.DEFINE_boolean("same_init", False, "Same initialization for z_hats.")
-    flags.DEFINE_string("model", "A", "The classifier model.")
+
     flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
     flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
     flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
