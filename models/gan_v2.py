@@ -472,7 +472,8 @@ class DefenseGANv2(AbstractModel):
             name='rec_optimizer')
 
         num_dim = len(z_hats_recs.get_shape())
-        axes = range(1, num_dim)
+        #Python 2 version axes = range(1, num_dim)
+        axes = list(range(1, num_dim))
 
         image_rec_loss = tf.reduce_mean(
             tf.square(z_hats_recs - images_tiled_rr),
