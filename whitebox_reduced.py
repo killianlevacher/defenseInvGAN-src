@@ -51,37 +51,37 @@ from utils.network_builder import model_a
 ################# PARAMS
 # DEFENSE_TYPE = "none"
 # DEFENSE_TYPE = "defense_gan"
-DEBUG=True
-DETECT_IMAGE = False
-LOAD_CLASSIFIER = True
-
-FLAGSattack_type = "fgsm"
-# flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
-
-
-FLAGSfgsm_eps = 0.3
-
-FLAGSdebug_dir = "temp"
-FLAGSdetect_image = False
-
-FLAGSlearning_rate = 0.001
-FLAGSlmbda= 0.1
-
-FLAGSmodel = "A"
-
-FLAGSnb_classes = 10
-FLAGSnb_epochs = 10
-FLAGSnum_tests = -1
-FLAGSnum_train = -1
-
-FLAGSoverride =  False
-FLAGSonline_training = False
-
-FLAGSrec_path= None
-FLAGSrandom_test_iter = -1
-FLAGSresults_dir= "whitebox"
-FLAGSsame_init =  False
-FLAGStrain_on_recs = False
+# DEBUG=True
+# DETECT_IMAGE = False
+# LOAD_CLASSIFIER = True
+#
+# FLAGSattack_type = "fgsm"
+# # flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
+#
+#
+# FLAGSfgsm_eps = 0.3
+#
+# FLAGSdebug_dir = "temp"
+# FLAGSdetect_image = False
+#
+# FLAGSlearning_rate = 0.001
+# FLAGSlmbda= 0.1
+#
+# FLAGSmodel = "A"
+#
+# FLAGSnb_classes = 10
+# FLAGSnb_epochs = 10
+# FLAGSnum_tests = -1
+# FLAGSnum_train = -1
+#
+# FLAGSoverride =  False
+# FLAGSonline_training = False
+#
+# FLAGSrec_path= None
+# FLAGSrandom_test_iter = -1
+# FLAGSresults_dir= "whitebox"
+# FLAGSsame_init =  False
+# FLAGStrain_on_recs = False
 
 #################
 orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
@@ -190,7 +190,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     preds_adv = None
 
     classifier_load_success = False
-    if LOAD_CLASSIFIER:
+    if FLAGS.load_classifier:
         try:
             path = tf.train.latest_checkpoint('classifiers/model/{}'.format(gan.dataset_name))
             saver = tf.train.Saver(var_list=used_vars)
@@ -232,13 +232,13 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, adv_x, recons_adv, DETECT_IMAGE)
+        diff_op = get_diff_op(model, adv_x, recons_adv, FLAGS.detect_image)
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_adv, diffs_mean, roc_info_adv = model_eval_gan(
             sess, images_pl, labels_pl, preds_adv, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=DEBUG, vis_dir=_get_vis_dir(gan, FLAGSattack_type))
+            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=FLAGS.debug, vis_dir=_get_vis_dir(gan, FLAGS.attack_type))
 
         # reconstruction on clean images
         recons_clean, zs = reconstructor.reconstruct(images_pl_transformed, batch_size=batch_size)
@@ -246,13 +246,13 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, DETECT_IMAGE)
+        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, FLAGS.detect_image)
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_rec, diffs_mean_rec, roc_info_rec = model_eval_gan(
             sess, images_pl, labels_pl, preds_eval, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=DEBUG, vis_dir=_get_vis_dir(gan, 'clean'))
+            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAGS.debug, vis_dir=_get_vis_dir(gan, 'clean'))
 
         # print('Training accuracy: {}'.format(train_acc))
         print('Non Adversarial Eval accuracy: {}'.format(eval_acc))
@@ -314,7 +314,7 @@ def main(cfg, argv=None):
 
             # Extract hyperparameters from reconstruction path.
 
-            assert FLAGSonline_training or not FLAGStrain_on_recs
+            assert FLAGS.online_training or not FLAGS.train_on_recs
 
     if gan is None:
         # TODO NOT USED 2 - USED FOR NO DEFENCE
@@ -329,7 +329,7 @@ def main(cfg, argv=None):
     # results.
     counter = 0
     temp_fp = str(counter) + '_' + result_file_name
-    results_dir = os.path.join(results_dir, FLAGSresults_dir)
+    results_dir = os.path.join(results_dir, FLAGS.results_dir)
     temp_final_fp = os.path.join(results_dir, temp_fp)
     while os.path.exists(temp_final_fp):
         counter += 1
@@ -340,16 +340,16 @@ def main(cfg, argv=None):
 
 
     accuracies = whitebox(
-        gan, rec_data_path=FLAGSrec_path,
+        gan, rec_data_path=FLAGS.rec_path,
         batch_size=cfg["BATCH_SIZE"],
-        learning_rate=FLAGSlearning_rate,
-        nb_epochs=FLAGSnb_epochs,
-        eps=FLAGSfgsm_eps,
-        online_training=FLAGSonline_training,
+        learning_rate=FLAGS.learning_rate,
+        nb_epochs=FLAGS.nb_epochs,
+        eps=FLAGS.fgsm_eps,
+        online_training=FLAGS.online_training,
         defense_type=cfg["TYPE"],
-        num_tests=FLAGSnum_tests,
-        attack_type=FLAGSattack_type,
-        num_train=FLAGSnum_train,
+        num_tests=FLAGS.num_tests,
+        attack_type=FLAGS.attack_type,
+        num_train=FLAGS.num_train,
         cfg=cfg
     )
 
@@ -387,26 +387,26 @@ def _get_results_dir_filename(cfg, gan):
                 gan.rec_iters,
                 gan.rec_rr,
                 gan.rec_lr,
-                FLAGSattack_type,
+                FLAGS.attack_type,
             )
 
-        if not FLAGStrain_on_recs:
+        if not FLAGS.train_on_recs:
             result_file_name = 'orig_' + result_file_name
     else:
         result_file_name = 'nodefense_'
-    if FLAGSnum_tests > -1:
+    if FLAGS.num_tests > -1:
         result_file_name = 'numtest={}_'.format(
-            FLAGSnum_tests) + result_file_name
+            FLAGS.num_tests) + result_file_name
 
-    if FLAGSnum_train > -1:
+    if FLAGS.num_train > -1:
         result_file_name = 'numtrain={}_'.format(
-            FLAGSnum_train) + result_file_name
+            FLAGS.num_train) + result_file_name
 
-    if DETECT_IMAGE:
+    if FLAGS.detect_image:
         result_file_name = 'det_image_' + result_file_name
 
-    result_file_name = 'model={}_'.format(FLAGSmodel) + result_file_name
-    result_file_name += 'attack={}.txt'.format(FLAGSattack_type)
+    result_file_name = 'model={}_'.format(FLAGS.model) + result_file_name
+    result_file_name += 'attack={}.txt'.format(FLAGS.attack_type)
     return results_dir, result_file_name
 
 
@@ -454,7 +454,7 @@ if __name__ == '__main__':
                          'Number of random sampling for testing the classifier.')
     flags.DEFINE_boolean("online_training", False,
                          "Train the base classifier on reconstructions.")
-    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
+    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
     flags.DEFINE_string("attack_type", "none", "Type of attack [fgsm|cw|bpda]")
     flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
     flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
