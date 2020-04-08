@@ -27,16 +27,27 @@ import tflib.cifar10
 import tflib.mnist
 import tflib.plot
 import tflib.save_images
-
-from models.dataset_networks import get_discriminator_fn, \
-    get_encoder_fn
 from tflib.layers import generator_loss, discriminator_loss
 
-
 from models.base_model_art import AbstractModel
-from utils.util_art import ensure_dir, get_generators
+from utils.util_art import get_encoder_fn, get_discriminator_fn
+from utils.util_art import ensure_dir, get_generators, get_generator_fn
 from utils.util_art import save_images_files
 
+def gan_from_config(cfg, test_mode):
+# from config.py
+    if cfg['TYPE'] == 'v2':
+        gan = DefenseGANv2(
+            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            test_mode=test_mode,
+        )
+    elif cfg['TYPE'] == 'inv':
+        gan = InvertorDefenseGAN(
+            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            test_mode=test_mode,
+        )
+
+    return gan
 
 class DefenseGANv2(AbstractModel):
     @property

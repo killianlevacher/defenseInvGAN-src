@@ -40,18 +40,15 @@ from cleverhans.utils import set_log_level, to_categorical
 from cleverhans.utils_tf import model_train, model_eval, batch_eval
 # from datasets.celeba import CelebA
 from datasets.dataset import PickleLazyDataset
-from models.gan import DefenseGANBase
+# from models.gan import DefenseGANBase
+
+
+from models.gan_v2_art import InvertorDefenseGAN, gan_from_config
+from utils.gan_defense_art import model_eval_gan
+from utils.network_builder_art import model_a, DefenseWrapper
+from utils.util_art import save_images_files, ensure_dir, load_config
 from utils.reconstruction_art import Reconstructor
 from utils.reconstruction_art import reconstruct_dataset
-
-from models.gan_v2 import InvertorDefenseGAN
-from utils.config import load_config, gan_from_config
-from utils.gan_defense import model_eval_gan
-from utils.misc import ensure_dir
-from utils.network_builder import model_a, model_b, model_c, model_d, \
-    model_e, model_f, model_z, model_q, model_y, DefenseWrapper
-
-from utils.visualize import save_images_files
 
 FLAGS = flags.FLAGS
 
@@ -386,8 +383,7 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
     nb_classes = classes
 
     type_to_models = {
-        'A': model_a, 'B': model_b, 'C': model_c, 'D': model_d, 'E': model_e,
-        'F': model_f, 'Q': model_q, 'Y': model_y, 'Z': model_z
+        'A': model_a
     }
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
@@ -616,8 +612,6 @@ def main(cfg, argv=None):
             else:
                 assert FLAGS.online_training or not FLAGS.train_on_recs
 
-    if gan is None:
-        gan = DefenseGANBase(cfg=cfg, test_mode=True)
 
     if FLAGS.override:
         gan.rec_rr = int(tr_rr)

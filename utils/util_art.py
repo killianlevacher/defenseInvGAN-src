@@ -2,6 +2,7 @@ import os
 import scipy.misc
 from tflib.layers import *
 import yaml
+# from models.gan_v2_art import DefenseGANv2, InvertorDefenseGAN
 
 class DummySummaryWriter(object):
     def write(self, *args, **arg_dicts):
@@ -97,7 +98,52 @@ def mnist_generator(z, is_training=True):
 
         return output
 
+
+
+
+def mnist_discriminator(x, update_collection=None, is_training=False):
+    net_dim = 64
+    use_sn = True
+    with tf.variable_scope('Discriminator', reuse=tf.AUTO_REUSE):
+        # block 1
+        x = conv2d(x, net_dim, 5, 2, sn=use_sn, update_collection=update_collection, name='conv0')
+        x = lrelu(x)
+        # block 2
+        x = conv2d(x, 2 * net_dim, 5, 2, sn=use_sn, update_collection=update_collection, name='conv1')
+        x = lrelu(x)
+        # block 3
+        x = conv2d(x, 4 * net_dim, 5, 2, sn=use_sn, update_collection=update_collection, name='conv2')
+        x = lrelu(x)
+        # output
+        x = tf.reshape(x, [-1, 4 * 4 * 4 * net_dim])
+        x = linear(x, 1, sn=use_sn, update_collection=update_collection, name='linear')
+        return tf.reshape(x, [-1])
+
+def mnist_encoder(x, is_training=False, use_bn=False, net_dim=64, latent_dim=128):
+    with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
+        x = conv2d(x, net_dim, 5, 2, name='conv0')
+        if use_bn:
+            x = batch_norm(x, is_training=is_training, name='bn0')
+        x = tf.nn.relu(x)
+
+        x = conv2d(x, 2*net_dim, 5, 2, name='conv1')
+        if use_bn:
+            x = batch_norm(x, is_training=is_training, name='bn1')
+        x = tf.nn.relu(x)
+
+        x = conv2d(x, 4*net_dim, 5, 2, name='conv2')
+        if use_bn:
+            x = batch_norm(x, is_training=is_training, name='bn2')
+        x = tf.nn.relu(x)
+
+        x = tf.reshape(x, [-1, 4 * 4 * 4 * net_dim])
+        x = linear(x, 2*latent_dim, name='linear')
+
+        return x[:, :latent_dim], x[:, latent_dim:]
+
 GENERATOR_DICT = {'mnist': [mnist_generator, mnist_generator]}
+ENCODER_DICT = {'mnist': [mnist_encoder, mnist_encoder]}
+DISCRIMINATOR_DICT = {'mnist': [mnist_discriminator, mnist_discriminator]}
 
 class Dataset(object):
     """The abstract class for handling datasets.
@@ -309,6 +355,18 @@ def get_generator_fn(dataset_name, use_resblock=False):
         return GENERATOR_DICT[dataset_name][1]
     else:
         return GENERATOR_DICT[dataset_name][0]
+
+def get_encoder_fn(dataset_name, use_resblock=False):
+    if use_resblock:
+        return ENCODER_DICT[dataset_name][1]
+    else:
+        return ENCODER_DICT[dataset_name][0]
+
+def get_discriminator_fn(dataset_name, use_resblock=False, use_label=False):
+    if use_resblock:
+        return DISCRIMINATOR_DICT[dataset_name][1]
+    else:
+        return DISCRIMINATOR_DICT[dataset_name][0]
 
 def save_images_files(images, prefix='im', labels=None, output_dir=None,
                       postfix=''):
