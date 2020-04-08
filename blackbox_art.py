@@ -42,7 +42,7 @@ from cleverhans.utils_tf import model_train, model_eval, batch_eval
 
 from models.gan_v2_art import InvertorDefenseGAN, gan_from_config
 from utils.gan_defense_art import model_eval_gan
-from utils.network_builder_art import model_a, DefenseWrapper
+from utils.network_builder_art import model_a, model_e, model_f, DefenseWrapper
 from utils.util_art import save_images_files, ensure_dir, load_config
 from utils.reconstruction_art import Reconstructor
 from utils.reconstruction_art import reconstruct_dataset
@@ -86,25 +86,25 @@ def prep_bbox(sess, images, labels, images_train, labels_train, images_test,
         'nb_epochs': nb_epochs,
         'batch_size': batch_size,
         'learning_rate': learning_rate,
-        'train_dir': 'classifiers/model/{}'.format(gan.dataset_name),
+        'train_dir': 'classifiers/model/{}'.format("mnist"),
         'filename': 'model_{}'.format(FLAGS.bb_model)
     }
     eval_params = {'batch_size': batch_size}
 
-    if gan.dataset_name in ['mnist', 'f-mnist']:
-        used_vars = model.get_params()
-        pred_train = model.get_logits(images, dropout=True)
-        pred_eval = model.get_logits(images)
+
+    used_vars = model.get_params()
+    pred_train = model.get_logits(images, dropout=True)
+    pred_eval = model.get_logits(images)
 
     classifier_load_success = False
     if FLAGS.load_bb_model:
         try:
-            path = tf.train.latest_checkpoint('classifiers/model/{}'.format(gan.dataset_name))
+            path = tf.train.latest_checkpoint('classifiers/model/{}'.format("mnist"))
             saver = tf.train.Saver(var_list=used_vars)
             saver.restore(sess, path)
             print('[+] BB model loaded successfully ...')
             classifier_load_success = True
-        except:
+        except Exception as e:
             print('[-] Fail to load BB model ...')
             classifier_load_success = False
 
@@ -298,13 +298,11 @@ def get_cached_gan_data(gan, test_on_dev, orig_data_flag=None):
         else:
             orig_data_flag = False
 
-    if 'celeba' in gan.dataset_name:
-        pass
-    else:
-        train_images, train_labels, test_images, test_labels = \
-            get_train_test(
-                orig_data_path[gan.dataset_name], test_on_dev=test_on_dev,
-                model=gan, orig_data=orig_data_flag, max_num=FLAGS.num_train)
+
+    train_images, train_labels, test_images, test_labels = \
+        get_train_test(
+            orig_data_path["mnist"], test_on_dev=test_on_dev,
+            model=gan, orig_data=orig_data_flag, max_num=FLAGS.num_train)
     return train_images, train_labels, test_images, test_labels
 
 
@@ -363,7 +361,7 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
     nb_classes = classes
 
     type_to_models = {
-        'A': model_a
+        'A': model_a, 'E': model_e, 'F': model_f
     }
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
@@ -398,9 +396,10 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
 
     # Define input and output TF placeholders
 
-    if FLAGS.image_dim[0] == 3:
-        FLAGS.image_dim = [FLAGS.image_dim[1], FLAGS.image_dim[2],
-                           FLAGS.image_dim[0]]
+    # TODO maybe that should be put back but I don't understand where it's set
+    # if FLAGS.image_dim[0] == 3:
+    #     FLAGS.image_dim = [FLAGS.image_dim[1], FLAGS.image_dim[2],
+    #                        FLAGS.image_dim[0]]
 
     images_tensor = tf.placeholder(tf.float32, shape=[None] + x_shape)
     labels_tensor = tf.placeholder(tf.float32, shape=(None, classes))
@@ -534,8 +533,10 @@ def _get_results_dir_filename(gan):
     result_file_name = 'sub={:d}_eps={:.2f}.txt'.format(FLAGS.data_aug,
                                                         FLAGS.fgsm_eps)
 
-    results_dir = os.path.join('results', '{}_{}'.format(
-        FLAGS.defense_type, FLAGS.dataset_name))
+    # results_dir = os.path.join('results', '{}_{}'.format(
+    #     FLAGS.defense_type, FLAGS.dataset_name))
+
+    results_dir = os.path.join('results', 'blackbox_{}_{}'.format(FLAGS.defense_type, "mnist"))
 
     if FLAGS.defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
@@ -574,7 +575,9 @@ def main(cfg, argv=None):
 
     gan = None
     # Setting test time reconstruction hyper parameters.
-    [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
+    # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
+    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
+
     if FLAGS.defense_type.lower() != 'none':
         if FLAGS.defense_type == 'defense_gan':
             gan = gan_from_config(cfg, True)
@@ -615,7 +618,7 @@ def main(cfg, argv=None):
     sub_result_path = os.path.join(results_dir, result_file_name)
 
     accuracies = blackbox(gan, rec_data_path=FLAGS.rec_path,
-                          batch_size=FLAGS.batch_size,
+                          batch_size=cfg["BATCH_SIZE"],
                           learning_rate=FLAGS.learning_rate,
                           nb_epochs=FLAGS.nb_epochs, holdout=FLAGS.holdout,
                           data_aug=FLAGS.data_aug,
@@ -623,7 +626,8 @@ def main(cfg, argv=None):
                           lmbda=FLAGS.lmbda,
                           online_training=FLAGS.online_training,
                           train_on_recs=FLAGS.train_on_recs,
-                          defense_type=FLAGS.defense_type)
+                          defense_type=cfg["TYPE"])
+
 
     ensure_dir(results_dir)
 
@@ -667,7 +671,16 @@ if __name__ == '__main__':
     cfg = load_config(args.cfg)
     flags = tf.app.flags
 
-    flags.DEFINE_string("defense_type", "none", "Type of defense " "[defense_gan|adv_tr|none]")
+    # ISSUE: the classifiers provided by authors only contain model A - other models need to be trained
+    flags.DEFINE_string("bb_model", 'A',
+                        "The architecture of the classifier model.")
+    flags.DEFINE_string("sub_model", 'A', "The architecture of the substitute model.")
+    flags.DEFINE_boolean("load_bb_model", True, "True for loading from saved bb models [False]")
+    flags.DEFINE_boolean("load_sub_model", True, "True for loading from saved sub models [False]")
+    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense " "[defense_gan|adv_tr|none]")
+
+
+    ##############
 
     flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
     flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
@@ -693,18 +706,16 @@ if __name__ == '__main__':
                          'using the cached reconstructions.')
 
 
-    flags.DEFINE_string("results_dir", None, "The path to results.")
+    flags.DEFINE_string("results_dir", "blackbox", "The path to results.")
     flags.DEFINE_boolean("train_on_recs", False,
                          "Train the black-box model on Defense-GAN "
                          "reconstructions.")
     flags.DEFINE_integer('num_train', -1, 'Number of training samples for '
                                           'the black-box model.')
-    flags.DEFINE_string("bb_model", 'F',
-                        "The architecture of the classifier model.")
-    flags.DEFINE_string("sub_model", 'E', "The architecture of the "
-                                          "substitute model.")
-    flags.DEFINE_boolean("load_bb_model", False, "True for loading from saved bb models [False]")
-    flags.DEFINE_boolean("load_sub_model", False, "True for loading from saved sub models [False]")
+
+
+
+
     flags.DEFINE_string("debug_dir", "temp", "Directory for debug outputs.")
     flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
     flags.DEFINE_boolean("override", None, "Overrides the test hyperparams.")

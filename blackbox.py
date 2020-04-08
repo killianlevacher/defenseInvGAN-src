@@ -646,7 +646,9 @@ def main(cfg, argv=None):
 
     gan = None
     # Setting test time reconstruction hyper parameters.
-    [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
+    # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
+    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
+
     if FLAGS.defense_type.lower() != 'none':
         if FLAGS.defense_type == 'defense_gan':
             gan = gan_from_config(cfg, True)
