@@ -38,11 +38,6 @@ from cleverhans.attacks import FastGradientMethod
 from cleverhans.attacks_tf import jacobian_graph, jacobian_augmentation
 from cleverhans.utils import set_log_level, to_categorical
 from cleverhans.utils_tf import model_train, model_eval, batch_eval
-# from datasets.celeba import CelebA
-from datasets.dataset import PickleLazyDataset
-# from models.gan import DefenseGANBase
-
-# from classifiers.cifar_model import Model
 
 
 from models.gan_v2_art import InvertorDefenseGAN, gan_from_config
@@ -56,12 +51,8 @@ FLAGS = flags.FLAGS
 
 # orig_ refers to original images and not reconstructed ones.
 # To prepare these cache files run "python main.py --save_ds".
-orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
-attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0},
-                      'f-mnist': {'eps': 0.3, 'clip_min': 0},
-                      'cifar-10': {'eps': 8*2 / 255.0, 'clip_min': -1},
-                      'celeba': {'eps': 8*2 / 255.0, 'clip_min': -1}
-                      }
+orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
+attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0}}
 
 
 def prep_bbox(sess, images, labels, images_train, labels_train, images_test,
