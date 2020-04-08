@@ -667,6 +667,8 @@ if __name__ == '__main__':
     cfg = load_config(args.cfg)
     flags = tf.app.flags
 
+    flags.DEFINE_string("defense_type", "none", "Type of defense " "[defense_gan|adv_tr|none]")
+
     flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
     flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
                                                'the black-box model.')
@@ -689,8 +691,8 @@ if __name__ == '__main__':
                          'Train the base classifier based on online '
                          'reconstructions from Defense-GAN, as opposed to '
                          'using the cached reconstructions.')
-    flags.DEFINE_string("defense_type", "none", "Type of defense "
-                                                "[defense_gan|adv_tr|none]")
+
+
     flags.DEFINE_string("results_dir", None, "The path to results.")
     flags.DEFINE_boolean("train_on_recs", False,
                          "Train the black-box model on Defense-GAN "
