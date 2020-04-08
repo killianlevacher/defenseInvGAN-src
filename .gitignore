@@ -1,9 +1,12 @@
+
 venv2/
 venv3/
 vis/
 results/
 .idea/
 classifiers/model/
+classifiers/sub_model/
+classifiers/sub_model2/
 tmp/
 data/
 output/
