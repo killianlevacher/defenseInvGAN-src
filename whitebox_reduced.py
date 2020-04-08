@@ -444,7 +444,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
 
     flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
-    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
+    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
     flags.DEFINE_string("model", "A", "The classifier model.")
 
     flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
