@@ -33,7 +33,7 @@ import tensorflow as tf
 from six.moves import xrange
 from tensorflow.python.platform import flags
 
-from classifiers.cifar_model import Model
+
 from cleverhans.attacks import FastGradientMethod
 from cleverhans.attacks_tf import jacobian_graph, jacobian_augmentation
 from cleverhans.utils import set_log_level, to_categorical
@@ -41,6 +41,8 @@ from cleverhans.utils_tf import model_train, model_eval, batch_eval
 # from datasets.celeba import CelebA
 from datasets.dataset import PickleLazyDataset
 # from models.gan import DefenseGANBase
+
+# from classifiers.cifar_model import Model
 
 
 from models.gan_v2_art import InvertorDefenseGAN, gan_from_config
@@ -102,19 +104,6 @@ def prep_bbox(sess, images, labels, images_train, labels_train, images_test,
         used_vars = model.get_params()
         pred_train = model.get_logits(images, dropout=True)
         pred_eval = model.get_logits(images)
-
-    elif gan.dataset_name == 'cifar-10':
-        pre_model = Model('classifiers/model/cifar-10', tiny=False, mode='eval', sess=sess)
-        with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            model = DefenseWrapper(pre_model, 'logits')
-        used_vars = [x for x in tf.global_variables() if x.name.startswith('model')]
-        pred_eval = model.get_logits(images)
-
-    elif gan.dataset_name == 'celeba':
-        images_pl_transformed = tf.cast(images, tf.float32) / 255. * 2. - 1.
-        used_vars = model.get_params()
-        pred_train = model.get_logits(images_pl_transformed, dropout=True)
-        pred_eval = model.get_logits(images_pl_transformed)
 
     classifier_load_success = False
     if FLAGS.load_bb_model:
