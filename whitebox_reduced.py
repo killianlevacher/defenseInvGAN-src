@@ -268,6 +268,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         sess.run(tf.local_variables_initializer())
         acc_adv = model_eval(sess, images_pl, labels_pl, preds_adv, test_images, test_labels,
                              args=eval_params)
+        print('Test accuracy on Non adversarial examples with No defense: %0.4f\n' % eval_acc)
         print('Test accuracy on adversarial examples with No defense: %0.4f\n' % acc_adv)
 
         return {'acc_adv': acc_adv,
@@ -443,7 +444,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
 
     flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
+    flags.DEFINE_string("defense_type", "none", "Type of defense [none|defense_gan|adv_tr]")
     flags.DEFINE_string("model", "A", "The classifier model.")
 
     flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
