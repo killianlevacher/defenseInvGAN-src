@@ -38,17 +38,19 @@ from cleverhans.attacks import FastGradientMethod
 from cleverhans.attacks_tf import jacobian_graph, jacobian_augmentation
 from cleverhans.utils import set_log_level, to_categorical
 from cleverhans.utils_tf import model_train, model_eval, batch_eval
-from datasets.celeba import CelebA
+# from datasets.celeba import CelebA
 from datasets.dataset import PickleLazyDataset
 from models.gan import DefenseGANBase
-from utils.reconstruction import Reconstructor
+from utils.reconstruction_art import Reconstructor
+from utils.reconstruction_art import reconstruct_dataset
+
 from models.gan_v2 import InvertorDefenseGAN
 from utils.config import load_config, gan_from_config
 from utils.gan_defense import model_eval_gan
 from utils.misc import ensure_dir
 from utils.network_builder import model_a, model_b, model_c, model_d, \
     model_e, model_f, model_z, model_q, model_y, DefenseWrapper
-from utils.reconstruction import reconstruct_dataset
+
 from utils.visualize import save_images_files
 
 FLAGS = flags.FLAGS
@@ -242,49 +244,6 @@ def convert_to_onehot(ys):
     return y_one_hat
 
 
-def get_celeba(data_path, test_on_dev=True, orig_data=False):
-    """Generates the CelebA dataset from Pickle files.
-    Args:
-        data_path: The path to where pickles are saved.
-            <model-path>/<split>/pickles/
-        test_on_dev: Test on the development set.
-        orig_data: Original data flag. `True` for returning the original
-            dataset.
-    Returns:
-        images: Images of the dataset.
-        labels: Labels of the loaded images.
-    """
-    dev_name = 'val'
-    if not test_on_dev:
-        dev_name = 'test'
-    ds = CelebA(attribute=FLAGS.attribute)
-    ds.load()
-    ds_test = CelebA(attribute=FLAGS.attribute)
-    ds_test.load(split=dev_name)
-    train_labels = ds.labels
-    test_labels = ds_test.labels
-
-    def get_pickeldb(split):
-        train_data_path = os.path.join(data_path, split, 'pickles')
-        assert os.path.exists(train_data_path)
-        pkl_files = os.listdir(train_data_path)
-        pkl_labels = np.array(
-            [int(re.findall('.*_l(\d+).pkl', pf)[0]) for pf in pkl_files],
-            np.int32)
-        pkl_paths = [os.path.join(train_data_path, pf) for pf in
-                     sorted(pkl_files)]
-        pkl_ds = PickleLazyDataset(pkl_paths, [64, 64, 3])
-        return pkl_ds, pkl_labels
-
-    if orig_data:
-        train_images = ds.images
-        test_images = ds_test.images
-    else:
-        train_images, train_labels = get_pickeldb('train')
-        test_images, test_labels = get_pickeldb(dev_name)
-
-    return train_images, convert_to_onehot(train_labels), test_images, \
-           convert_to_onehot(test_labels)
 
 
 def get_train_test(data_path, test_on_dev=True, model=None,
@@ -316,8 +275,6 @@ def get_train_test(data_path, test_on_dev=True, model=None,
                 with open(data_path,'rb') as f:
                     train_images_gan = pickle.load(f)
                     train_labels_gan = pickle.load(f)
-                    # train_images_gan = cPickle.load(f)
-                    # train_labels_gan = cPickle.load(f)
                 could_load = True
             else:
                 print('[!] Run python train.py --cfg <path-to-cfg> --save_ds to prepare the dataset cache files.')
@@ -365,14 +322,7 @@ def get_cached_gan_data(gan, test_on_dev, orig_data_flag=None):
             orig_data_flag = False
 
     if 'celeba' in gan.dataset_name:
-        train_images, train_labels, test_images, test_labels = get_celeba(
-            FLAGS.rec_path,
-            test_on_dev=test_on_dev,
-            orig_data=orig_data_flag,
-        )
-        if FLAGS.num_train > 0:
-            train_images = train_images[:FLAGS.num_train]
-            train_labels = train_labels[:FLAGS.num_train]
+        pass
     else:
         train_images, train_labels, test_images, test_labels = \
             get_train_test(
@@ -709,9 +659,9 @@ def main(cfg, argv=None):
 
     if accuracies['roc_info_adv']:  # For attack detection.
         pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
-        pickle.dump(accuracies['roc_info_adv'], f)
-        # cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
-        with open(pkl_result_path, 'w') as f:
+        with open(pkl_result_path, 'wb') as f:
+            pickle.dump(accuracies['roc_info_adv'], f)
+            # cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
             print('[*] saved roc_info in {}'.format(pkl_result_path))
 
     if accuracies['roc_info_rec']:  # For attack detection.
@@ -741,54 +691,47 @@ if __name__ == '__main__':
     # experiments/config files into FLAGS.param_name and can be passed in from command line.
     # arguments : python blackbox.py --cfg <config_path> --<param_name> <param_value>
     cfg = load_config(args.cfg)
-
     flags = tf.app.flags
-    flags.DEFINE_string("bb_model", 'F',
-                        "The architecture of the classifier model.")
+
+    flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
+    flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
+                                               'the black-box model.')
+    flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train the '
+                                          'blackbox model.')
+    flags.DEFINE_integer('holdout', 150, 'Test set holdout for adversary.')
+    flags.DEFINE_integer('data_aug', 6, 'Number of substitute data augmentations.')
+    flags.DEFINE_integer('nb_epochs_s', 10, 'Training epochs for substitute.')
+    flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697')
     flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
     flags.DEFINE_float('fgsm_eps_tr', 0.15, 'FGSM epsilon for adversarial '
                                             'training.')
-    flags.DEFINE_string("defense_type", "none", "Type of defense "
-                                                "[defense_gan|adv_tr|none]")
-    flags.DEFINE_integer('data_aug', 6, 'Number of substitute data augmentations.')
-    flags.DEFINE_string("debug_dir", "temp", "Directory for debug outputs.")
-    flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
-
-    flags.DEFINE_integer('holdout', 150, 'Test set holdout for adversary.')
-
-    flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
-                                               'the black-box model.')
-    flags.DEFINE_boolean("load_bb_model", False, "True for loading from saved bb models [False]")
-    flags.DEFINE_boolean("load_sub_model", False, "True for loading from saved sub models [False]")
-
-    flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697')
-
+    flags.DEFINE_string('rec_path', None, 'Path to Defense-GAN '
+                                          'reconstructions.')
     flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
-    flags.DEFINE_integer('num_train', -1, 'Number of training samples for '
-                                          'the black-box model.')
-    flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
-    flags.DEFINE_integer('nb_epochs_s', 10, 'Training epochs for substitute.')
-    flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train the '
-                                          'blackbox model.')
+    flags.DEFINE_integer('random_test_iter', -1,
+                         'Number of random sampling for testing the '
+                         'classifier.')
     flags.DEFINE_boolean("online_training", False,
                          'Train the base classifier based on online '
                          'reconstructions from Defense-GAN, as opposed to '
                          'using the cached reconstructions.')
-    flags.DEFINE_boolean("override", None, "Overrides the test hyperparams.")
-
+    flags.DEFINE_string("defense_type", "none", "Type of defense "
+                                                "[defense_gan|adv_tr|none]")
     flags.DEFINE_string("results_dir", None, "The path to results.")
-    flags.DEFINE_string('rec_path', None, 'Path to Defense-GAN '
-                                          'reconstructions.')
-    flags.DEFINE_integer('random_test_iter', -1,
-                         'Number of random sampling for testing the '
-                         'classifier.')
-
-    flags.DEFINE_string("sub_model", 'E', "The architecture of the "
-                                          "substitute model.")
-
     flags.DEFINE_boolean("train_on_recs", False,
                          "Train the black-box model on Defense-GAN "
                          "reconstructions.")
+    flags.DEFINE_integer('num_train', -1, 'Number of training samples for '
+                                          'the black-box model.')
+    flags.DEFINE_string("bb_model", 'F',
+                        "The architecture of the classifier model.")
+    flags.DEFINE_string("sub_model", 'E', "The architecture of the "
+                                          "substitute model.")
+    flags.DEFINE_boolean("load_bb_model", False, "True for loading from saved bb models [False]")
+    flags.DEFINE_boolean("load_sub_model", False, "True for loading from saved sub models [False]")
+    flags.DEFINE_string("debug_dir", "temp", "Directory for debug outputs.")
+    flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
+    flags.DEFINE_boolean("override", None, "Overrides the test hyperparams.")
 
     main_cfg = lambda x: main(cfg, x)
     tf.app.run(main=main_cfg)

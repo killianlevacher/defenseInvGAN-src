@@ -28,68 +28,35 @@ import pickle
 import logging
 import os
 import sys
+import time
 
 import numpy as np
 import tensorflow as tf
 
-from classifiers.cifar_model import Model
-from blackbox import get_cached_gan_data, get_reconstructor
-from cleverhans.attacks import CarliniWagnerL2
-from cleverhans.attacks import FastGradientMethod
-from cleverhans.attacks.bpda import BPDAL2
-from utils.attack import MadryEtAl
-from cleverhans.utils import set_log_level, AccuracyReport
-from cleverhans.utils_tf import model_train, model_eval
-from models.gan_v2 import InvertorDefenseGAN
-from models.dataset_networks import get_generator_fn
-from models.gan_v2 import DefenseGANv2, InvertorDefenseGAN
-from utils.config import load_config
-from utils.gan_defense import model_eval_gan
-from utils.misc import ensure_dir
-from utils.network_builder import model_a
 
-################# PARAMS
-# DEFENSE_TYPE = "none"
-# DEFENSE_TYPE = "defense_gan"
-# DEBUG=True
-# DETECT_IMAGE = False
-# LOAD_CLASSIFIER = True
-#
-# FLAGSattack_type = "fgsm"
-# # flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
-#
-#
-# FLAGSfgsm_eps = 0.3
-#
-# FLAGSdebug_dir = "temp"
-# FLAGSdetect_image = False
-#
-# FLAGSlearning_rate = 0.001
-# FLAGSlmbda= 0.1
-#
-# FLAGSmodel = "A"
-#
-# FLAGSnb_classes = 10
-# FLAGSnb_epochs = 10
-# FLAGSnum_tests = -1
-# FLAGSnum_train = -1
-#
-# FLAGSoverride =  False
-# FLAGSonline_training = False
-#
-# FLAGSrec_path= None
-# FLAGSrandom_test_iter = -1
-# FLAGSresults_dir= "whitebox"
-# FLAGSsame_init =  False
-# FLAGStrain_on_recs = False
+from cleverhans.attacks import FastGradientMethod
+from cleverhans.utils import set_log_level, AccuracyReport
+from cleverhans.utils_tf import  model_eval
+
+from utils.config import load_config
+
+from blackbox_art import get_cached_gan_data, get_reconstructor
+from models.gan_v2_art import DefenseGANv2, InvertorDefenseGAN
+from utils.gan_defense_art import model_eval_gan
+from utils.util_art import ensure_dir
+from utils.util_art import get_generator_fn
+from utils.network_builder_art import model_a
+
 
 #################
 orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
+orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
 attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0},
                       'f-mnist': {'eps': 0.3, 'clip_min': 0},
                       'cifar-10': {'eps': 8*2 / 255.0, 'clip_min': -1},
                       'celeba': {'eps': 8*2 / 255.0, 'clip_min': -1}
                       }
+
 
 
 def get_diff_op(classifier, x1, x2, use_image=False):
