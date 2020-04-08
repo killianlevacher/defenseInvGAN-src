@@ -21,10 +21,13 @@ import tensorflow as tf
 import yaml
 
 import tflib
-from utils.misc import ensure_dir
+
 from tensorflow.contrib import slim
 
-from utils.dummy import DummySummaryWriter
+from utils.util_art import DummySummaryWriter
+from utils.util_art import ensure_dir
+
+
 
 INPUT_TRANSFORM_DICT = {
     'mnist': lambda x: tf.cast(x, tf.float32) / 255.,

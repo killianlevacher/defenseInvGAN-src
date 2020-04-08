@@ -38,11 +38,11 @@ from cleverhans.attacks import FastGradientMethod
 from cleverhans.utils import set_log_level, AccuracyReport
 from cleverhans.utils_tf import  model_eval
 
-from utils.config import load_config
 
 from blackbox_art import get_cached_gan_data, get_reconstructor
 from models.gan_v2_art import DefenseGANv2, InvertorDefenseGAN
 from utils.gan_defense_art import model_eval_gan
+from utils.util_art import load_config
 from utils.util_art import ensure_dir
 from utils.util_art import get_generator_fn
 from utils.network_builder_art import model_a

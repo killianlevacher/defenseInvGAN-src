@@ -28,8 +28,9 @@ from __future__ import unicode_literals
 from cleverhans.model import Model
 from cleverhans.picklable_model import Conv2D, ReLU, Flatten, Linear, Dropout, Softmax
 from cleverhans.picklable_model import Layer, MLP
-from utils.reconstruction import Reconstructor
-from models.gan_v2 import InvertorDefenseGAN
+
+from utils.reconstruction_art import Reconstructor
+from models.gan_v2_art import InvertorDefenseGAN
 import numpy as np
 import tensorflow as tf
 

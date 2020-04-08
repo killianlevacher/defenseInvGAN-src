@@ -4,10 +4,12 @@ import pickle
 import numpy as np
 
 import tensorflow as tf
+import tflib
+
 from models.gan_v2_art import InvertorDefenseGAN
 from utils.util_art import ensure_dir
 from utils.util_art import save_images_files
-import tflib
+
 
 class Reconstructor(object):
     def __init__(self, gan):

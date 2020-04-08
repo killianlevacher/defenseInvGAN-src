@@ -22,19 +22,19 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import slim
 from tensorflow.python.ops.losses.losses_impl import Reduction
-
 import tflib
 import tflib.cifar10
 import tflib.mnist
 import tflib.plot
 import tflib.save_images
+
 from models.dataset_networks import get_discriminator_fn, \
     get_encoder_fn
 from tflib.layers import generator_loss, discriminator_loss
-from datasets.utils import get_generators
-from models.base_model_art import AbstractModel
 
-from utils.util_art import ensure_dir
+
+from models.base_model_art import AbstractModel
+from utils.util_art import ensure_dir, get_generators
 from utils.util_art import save_images_files
 
 
