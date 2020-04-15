@@ -423,7 +423,10 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
         adv_training=adv_training,
         cnn_arch=bb_model)
 
+    #accuracies['bbox'] is the legitimate accuracy
     model, bbox_preds, accuracies['bbox'] = prep_bbox_out
+
+
 
     # Train substitute using method from https://arxiv.org/abs/1602.02697
     print("Training the substitute model.")
@@ -503,7 +506,7 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
 
         print('Evaluation accuracy with reconstruction: {}'.format(acc_rec))
         print('Test accuracy of oracle on cleaned images : {}'.format(acc_adv))
-
+        print('Test accuracy of black-box on non adversarial test examples: ' + str(accuracies['bbox']))
         return {'acc_adv': acc_adv,
                 'acc_rec': acc_rec,
                 'roc_info_adv': roc_info_adv,
@@ -516,10 +519,12 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
                               args=eval_params)
         print('Test accuracy of oracle on adversarial examples generated '
               'using the substitute: ' + str(acc_adv))
+        print('Test accuracy of black-box on non adversarial test examples: ' + str(accuracies['bbox']))
         return {'acc_adv': acc_adv,
                 'acc_rec': 0,
                 'roc_info_adv': None,
                 'roc_info_rec': None}
+
 
 
 def get_reconstructor(gan):
