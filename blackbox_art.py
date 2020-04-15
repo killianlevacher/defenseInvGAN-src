@@ -49,6 +49,66 @@ from utils.reconstruction_art import reconstruct_dataset
 
 FLAGS = flags.FLAGS
 
+#"The architecture of the classifier model.")
+FLAGS_bb_model ='A'
+#"The architecture of the substitute model
+FLAGS_sub_model = 'A'
+
+FLAGS_load_bb_model = True
+FLAGS_load_sub_model = True
+#"Type of defense " "[defense_gan|adv_tr|none]")
+FLAGS_defense_type = "defense_gan"
+
+FLAGS_nb_classes= 10
+#'Learning rate for training the black-box model.')
+FLAGS_learning_rate = 0.001
+#'Number of epochs to train the blackbox model.')
+FLAGS_nb_epochs = 10
+
+#Test set holdout for adversary.')
+FLAGS_holdout = 150
+# 'Number of substitute data augmentations.')
+FLAGS_data_aug = 6
+#, 'Training epochs for substitute.')
+FLAGS_nb_epochs_s = 10
+
+#, 'Lambda from arxiv.org/abs/1602.02697')
+FLAGS_lmbda = 0.1
+
+#, 'FGSM epsilon.')
+FLAGS_fgsm_eps = 0.3
+
+#, 'FGSM epsilon for adversarial training.')
+FLAGS_fgsm_eps_tr = 0.15
+
+#, 'Path to Defense-GAN reconstructions.')
+FLAGS_rec_path = None
+
+#, 'Number of test samples.')
+FLAGS_num_tests = -1
+#, Number of random sampling for testing the classifier.')
+FLAGS_random_test_iter = -1
+
+#Train the base classifier based on online reconstructions from Defense-GAN, as opposed to using the cached reconstructions.')
+FLAGS_online_training = False
+
+#, "The path to results.")
+FLAGS_results_dir = "blackbox"
+##"Train the black-box model on Defense-GAN reconstructions.")
+FLAGS_train_on_recs = False
+#'Number of training samples for the black-box model.')
+FLAGS_num_train = -1
+
+#, "Directory for debug outputs.")
+FLAGS_debug_dir = "temp"
+
+#, "True for saving reconstructions [False]")
+FLAGS_debug = False
+# , "Overrides the test hyperparams.")
+FLAGS_override = None
+
+
+
 # orig_ refers to original images and not reconstructed ones.
 # To prepare these cache files run "python main.py --save_ds".
 orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
@@ -87,7 +147,7 @@ def prep_bbox(sess, images, labels, images_train, labels_train, images_test,
         'batch_size': batch_size,
         'learning_rate': learning_rate,
         'train_dir': 'classifiers/model/{}'.format("mnist"),
-        'filename': 'model_{}'.format(FLAGS.bb_model)
+        'filename': 'model_{}'.format(FLAGS_bb_model)
     }
     eval_params = {'batch_size': batch_size}
 
@@ -97,7 +157,7 @@ def prep_bbox(sess, images, labels, images_train, labels_train, images_test,
     pred_eval = model.get_logits(images)
 
     classifier_load_success = False
-    if FLAGS.load_bb_model:
+    if FLAGS_load_bb_model:
         try:
             path = tf.train.latest_checkpoint('classifiers/model/{}'.format("mnist"))
             saver = tf.train.Saver(var_list=used_vars)
@@ -151,7 +211,7 @@ def train_sub(sess, x, y, bbox_preds, X_sub, Y_sub, nb_classes,
     model_sub = substitute_model
     used_vars = model_sub.get_params()
 
-    if FLAGS.load_sub_model:
+    if FLAGS_load_sub_model:
         try:
             path = tf.train.latest_checkpoint('classifiers/sub_model/{}'.format(dataset_name))
             saver = tf.train.Saver(var_list=used_vars)
@@ -176,7 +236,7 @@ def train_sub(sess, x, y, bbox_preds, X_sub, Y_sub, nb_classes,
         'batch_size': batch_size,
         'learning_rate': learning_rate,
         'train_dir': 'classifiers/sub_model/{}'.format(dataset_name),
-        'filename': 'model_{}'.format(FLAGS.sub_model)
+        'filename': 'model_{}'.format(FLAGS_sub_model)
     }
 
     # Train the substitute and augment dataset alternatively.
@@ -293,7 +353,7 @@ def get_cached_gan_data(gan, test_on_dev, FLAG_num_train, orig_data_flag=None):
     """
     FLAGS = flags.FLAGS
     if orig_data_flag is None:
-        if not FLAGS.train_on_recs or FLAGS.defense_type != 'defense_gan':
+        if not FLAGS_train_on_recs or FLAGS_defense_type != 'defense_gan':
             orig_data_flag = True
         else:
             orig_data_flag = False
@@ -365,18 +425,18 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     }
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-        bb_model = type_to_models[FLAGS.bb_model](
+        bb_model = type_to_models[FLAGS_bb_model](
             input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
         )
     with tf.variable_scope("Substitute", reuse=tf.AUTO_REUSE):
-        sub_model = type_to_models[FLAGS.sub_model](
+        sub_model = type_to_models[FLAGS_sub_model](
             input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
         )
 
-    if FLAGS.debug:
+    if FLAGS_debug:
         train_images = train_images[:20 * batch_size]
         train_labels = train_labels[:20 * batch_size]
-        debug_dir = os.path.join('debug', 'blackbox', FLAGS.debug_dir)
+        debug_dir = os.path.join('debug', 'blackbox', FLAGS_debug_dir)
         ensure_dir(debug_dir)
         x_debug_test = test_images[:batch_size]
 
@@ -387,9 +447,9 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     print(labels_sub)
 
     # Redefine test set as remaining samples unavailable to adversaries
-    if FLAGS.num_tests > 0:
-        test_images = test_images[:FLAGS.num_tests]
-        test_labels = test_labels[:FLAGS.num_tests]
+    if FLAGS_num_tests > 0:
+        test_images = test_images[:FLAGS_num_tests]
+        test_labels = test_labels[:FLAGS_num_tests]
 
     test_images = test_images[holdout:]
     test_labels = test_labels[holdout:]
@@ -411,7 +471,7 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         test_labels
 
     cur_gan = gan
-    if FLAGS.debug:
+    if FLAGS_debug:
         train_images_bb = train_images_bb[:20 * batch_size]
         train_labels_bb = train_labels_bb[:20 * batch_size]
 
@@ -458,7 +518,7 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     eval_params = {'batch_size': batch_size}
     x_adv_sub = fgsm.generate(images_tensor, **fgsm_par)
 
-    if FLAGS.debug and gan is not None:  # To see some qualitative results.
+    if FLAGS_debug and gan is not None:  # To see some qualitative results.
         recon_tensors, _ = reconstructor.reconstruct(x_adv_sub, batch_size=batch_size, reconstructor_id=2)
         x_rec_orig, _ = reconstructor.reconstruct(images_tensor, batch_size=batch_size, reconstructor_id=3)
 
@@ -535,39 +595,39 @@ def get_reconstructor(gan):
 
 
 def _get_results_dir_filename(gan):
-    result_file_name = 'sub={:d}_eps={:.2f}.txt'.format(FLAGS.data_aug,
-                                                        FLAGS.fgsm_eps)
+    result_file_name = 'sub={:d}_eps={:.2f}.txt'.format(FLAGS_data_aug,
+                                                        FLAGS_fgsm_eps)
 
     # results_dir = os.path.join('results', '{}_{}'.format(
     #     FLAGS.defense_type, FLAGS.dataset_name))
 
-    results_dir = os.path.join('results', 'blackbox_{}_{}'.format(FLAGS.defense_type, "mnist"))
+    results_dir = os.path.join('results', 'blackbox_{}_{}'.format(FLAGS_defense_type, "mnist"))
 
-    if FLAGS.defense_type == 'defense_gan':
+    if FLAGS_defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
         result_file_name = \
             'RR={:d}_LR={:.4f}_Iter={:d}_sub={:d}.txt'.format(
                 gan.rec_rr,
                 gan.rec_lr,
                 gan.rec_iters,
-                FLAGS.data_aug)
+                FLAGS_data_aug)
 
-        if not FLAGS.train_on_recs:
+        if not FLAGS_train_on_recs:
             result_file_name = 'orig_' + result_file_name
-    elif FLAGS.defense_type == 'adv_tr':
+    elif FLAGS_defense_type == 'adv_tr':
         result_file_name = 'sub={:d}_trEps={:.2f}_eps={:.2f}.txt'.format(
-            FLAGS.data_aug, FLAGS.fgsm_eps_tr,
-            FLAGS.fgsm_eps)
-    if FLAGS.num_tests > -1:
+            FLAGS_data_aug, FLAGS_fgsm_eps_tr,
+            FLAGS_fgsm_eps)
+    if FLAGS_num_tests > -1:
         result_file_name = 'numtest={}_'.format(
-            FLAGS.num_tests) + result_file_name
+            FLAGS_num_tests) + result_file_name
 
-    if FLAGS.num_train > -1:
+    if FLAGS_num_train > -1:
         result_file_name = 'numtrain={}_'.format(
-            FLAGS.num_train) + result_file_name
+            FLAGS_num_train) + result_file_name
 
-    result_file_name = 'bbModel={}_subModel={}_'.format(FLAGS.bb_model,
-                                                        FLAGS.sub_model) \
+    result_file_name = 'bbModel={}_subModel={}_'.format(FLAGS_bb_model,
+                                                        FLAGS_sub_model) \
                        + result_file_name
     return results_dir, result_file_name
 
@@ -583,25 +643,25 @@ def main(cfg, argv=None):
     # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
     [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
 
-    if FLAGS.defense_type.lower() != 'none':
-        if FLAGS.defense_type == 'defense_gan':
+    if FLAGS_defense_type.lower() != 'none':
+        if FLAGS_defense_type == 'defense_gan':
             gan = gan_from_config(cfg, True)
 
             gan.load_model()
 
             # extract hyper parameters from reconstruction path.
-            if FLAGS.rec_path is not None:
+            if FLAGS_rec_path is not None:
                 train_param_re = re.compile('recs_rr(.*)_lr(.*)_iters(.*)')
                 [tr_rr, tr_lr, tr_iters] = \
-                    train_param_re.findall(FLAGS.rec_path)[0]
+                    train_param_re.findall(FLAGS_rec_path)[0]
                 gan.rec_rr = int(tr_rr)
                 gan.rec_lr = float(tr_lr)
                 gan.rec_iters = int(tr_iters)
             else:
-                assert FLAGS.online_training or not FLAGS.train_on_recs
+                assert FLAGS_online_training or not FLAGS_train_on_recs
 
 
-    if FLAGS.override:
+    if FLAGS_override:
         gan.rec_rr = int(tr_rr)
         gan.rec_lr = float(tr_lr)
         gan.rec_iters = int(tr_iters)
@@ -613,7 +673,7 @@ def main(cfg, argv=None):
     # results.
     counter = 0
     temp_fp = str(counter) + '_' + result_file_name
-    results_dir = os.path.join(results_dir, FLAGS.results_dir)
+    results_dir = os.path.join(results_dir, FLAGS_results_dir)
     temp_final_fp = os.path.join(results_dir, temp_fp)
     while os.path.exists(temp_final_fp):
         counter += 1
@@ -622,16 +682,16 @@ def main(cfg, argv=None):
     result_file_name = temp_fp
     sub_result_path = os.path.join(results_dir, result_file_name)
 
-    accuracies = blackbox(gan, FLAG_num_train,
-                          rec_data_path=FLAGS.rec_path,
+    accuracies = blackbox(gan, FLAGS_num_train,
+                          rec_data_path=FLAGS_rec_path,
                           batch_size=cfg["BATCH_SIZE"],
-                          learning_rate=FLAGS.learning_rate,
-                          nb_epochs=FLAGS.nb_epochs, holdout=FLAGS.holdout,
-                          data_aug=FLAGS.data_aug,
-                          nb_epochs_s=FLAGS.nb_epochs_s,
-                          lmbda=FLAGS.lmbda,
-                          online_training=FLAGS.online_training,
-                          train_on_recs=FLAGS.train_on_recs,
+                          learning_rate=FLAGS_learning_rate,
+                          nb_epochs=FLAGS_nb_epochs, holdout=FLAGS_holdout,
+                          data_aug=FLAGS_data_aug,
+                          nb_epochs_s=FLAGS_nb_epochs_s,
+                          lmbda=FLAGS_lmbda,
+                          online_training=FLAGS_online_training,
+                          train_on_recs=FLAGS_train_on_recs,
                           defense_type=cfg["TYPE"])
 
 
@@ -678,53 +738,53 @@ if __name__ == '__main__':
     flags = tf.app.flags
 
     # ISSUE: the classifiers provided by authors only contain model A - other models need to be trained
-    flags.DEFINE_string("bb_model", 'A',
-                        "The architecture of the classifier model.")
-    flags.DEFINE_string("sub_model", 'A', "The architecture of the substitute model.")
-    flags.DEFINE_boolean("load_bb_model", True, "True for loading from saved bb models [False]")
-    flags.DEFINE_boolean("load_sub_model", True, "True for loading from saved sub models [False]")
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense " "[defense_gan|adv_tr|none]")
-
-
-    ##############
-
-    flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
-    flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
-                                               'the black-box model.')
-    flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train the '
-                                          'blackbox model.')
-    flags.DEFINE_integer('holdout', 150, 'Test set holdout for adversary.')
-    flags.DEFINE_integer('data_aug', 6, 'Number of substitute data augmentations.')
-    flags.DEFINE_integer('nb_epochs_s', 10, 'Training epochs for substitute.')
-    flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697')
-    flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
-    flags.DEFINE_float('fgsm_eps_tr', 0.15, 'FGSM epsilon for adversarial '
-                                            'training.')
-    flags.DEFINE_string('rec_path', None, 'Path to Defense-GAN '
-                                          'reconstructions.')
-    flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
-    flags.DEFINE_integer('random_test_iter', -1,
-                         'Number of random sampling for testing the '
-                         'classifier.')
-    flags.DEFINE_boolean("online_training", False,
-                         'Train the base classifier based on online '
-                         'reconstructions from Defense-GAN, as opposed to '
-                         'using the cached reconstructions.')
-
-
-    flags.DEFINE_string("results_dir", "blackbox", "The path to results.")
-    flags.DEFINE_boolean("train_on_recs", False,
-                         "Train the black-box model on Defense-GAN "
-                         "reconstructions.")
-    flags.DEFINE_integer('num_train', -1, 'Number of training samples for '
-                                          'the black-box model.')
-
-
-
-
-    flags.DEFINE_string("debug_dir", "temp", "Directory for debug outputs.")
-    flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
-    flags.DEFINE_boolean("override", None, "Overrides the test hyperparams.")
+    # flags.DEFINE_string("bb_model", 'A',
+    #                     "The architecture of the classifier model.")
+    # flags.DEFINE_string("sub_model", 'A', "The architecture of the substitute model.")
+    # flags.DEFINE_boolean("load_bb_model", True, "True for loading from saved bb models [False]")
+    # flags.DEFINE_boolean("load_sub_model", True, "True for loading from saved sub models [False]")
+    # flags.DEFINE_string("defense_type", "defense_gan", "Type of defense " "[defense_gan|adv_tr|none]")
+    #
+    #
+    # ##############
+    #
+    # flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
+    # flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training '
+    #                                            'the black-box model.')
+    # flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train the '
+    #                                       'blackbox model.')
+    # flags.DEFINE_integer('holdout', 150, 'Test set holdout for adversary.')
+    # flags.DEFINE_integer('data_aug', 6, 'Number of substitute data augmentations.')
+    # flags.DEFINE_integer('nb_epochs_s', 10, 'Training epochs for substitute.')
+    # flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697')
+    # flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
+    # flags.DEFINE_float('fgsm_eps_tr', 0.15, 'FGSM epsilon for adversarial '
+    #                                         'training.')
+    # flags.DEFINE_string('rec_path', None, 'Path to Defense-GAN '
+    #                                       'reconstructions.')
+    # flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
+    # flags.DEFINE_integer('random_test_iter', -1,
+    #                      'Number of random sampling for testing the '
+    #                      'classifier.')
+    # flags.DEFINE_boolean("online_training", False,
+    #                      'Train the base classifier based on online '
+    #                      'reconstructions from Defense-GAN, as opposed to '
+    #                      'using the cached reconstructions.')
+    #
+    #
+    # flags.DEFINE_string("results_dir", "blackbox", "The path to results.")
+    # flags.DEFINE_boolean("train_on_recs", False,
+    #                      "Train the black-box model on Defense-GAN "
+    #                      "reconstructions.")
+    # flags.DEFINE_integer('num_train', -1, 'Number of training samples for '
+    #                                       'the black-box model.')
+    #
+    #
+    #
+    #
+    # flags.DEFINE_string("debug_dir", "temp", "Directory for debug outputs.")
+    # flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
+    # flags.DEFINE_boolean("override", None, "Overrides the test hyperparams.")
 
     main_cfg = lambda x: main(cfg, x)
     tf.app.run(main=main_cfg)
