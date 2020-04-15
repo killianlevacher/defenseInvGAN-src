@@ -49,15 +49,29 @@ from utils.network_builder_art import model_a
 
 
 #################
-orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
-orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist', 'f-mnist', 'cifar-10']}
-attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0},
-                      'f-mnist': {'eps': 0.3, 'clip_min': 0},
-                      'cifar-10': {'eps': 8*2 / 255.0, 'clip_min': -1},
-                      'celeba': {'eps': 8*2 / 255.0, 'clip_min': -1}
-                      }
+orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
+orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
+attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0} }
 
-
+# "Type of defense [none|defense_gan|adv_tr]"
+FLAG_defense_type = "defense_gan"
+#"True for loading from saved classifier models [False]"
+FLAG_load_classifier = True
+#"Type of attack [fgsm|cw|bpda]"
+FLAG_attack_type = "fgsm"
+FLAG_model = "A"
+FLAG_learning_rate = 0.001
+FLAG_nb_epochs = 10
+FLAG_rec_path = None
+FLAG_num_tests = -1
+FLAG_online_training = False
+FLAG_num_train = -1
+FLAG_results_dir = "whitebox"
+FLAG_debug = False
+FLAG_load_classifier = True
+FLAG_detect_image = False
+FLAG_fgsm_eps = 0.3
+FLAG_train_on_recs = False
 
 def get_diff_op(classifier, x1, x2, use_image=False):
 
@@ -107,7 +121,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     eps = attack_config_dict[gan.dataset_name]['eps']
     min_val = attack_config_dict[gan.dataset_name]['clip_min']
 
-    train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, orig_data_flag=True)
+    train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, FLAG_num_train, orig_data_flag=True)
 
     SUB_BATCH_SIZE = batch_size
     test_images = test_images[:SUB_BATCH_SIZE]
@@ -157,7 +171,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     preds_adv = None
 
     classifier_load_success = False
-    if FLAGS.load_classifier:
+    if FLAG_load_classifier:
         try:
             path = tf.train.latest_checkpoint('classifiers/model/{}'.format(gan.dataset_name))
             saver = tf.train.Saver(var_list=used_vars)
@@ -191,7 +205,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
     adv_x = attack_obj.generate(images_pl_transformed, **attack_params)
 
-    if FLAGS.defense_type == 'defense_gan':
+    if FLAG_defense_type == 'defense_gan':
 
         recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123)
 
@@ -199,13 +213,13 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, adv_x, recons_adv, FLAGS.detect_image)
+        diff_op = get_diff_op(model, adv_x, recons_adv, FLAG_detect_image)
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_adv, diffs_mean, roc_info_adv = model_eval_gan(
             sess, images_pl, labels_pl, preds_adv, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=FLAGS.debug, vis_dir=_get_vis_dir(gan, FLAGS.attack_type))
+            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=FLAG_debug, vis_dir=_get_vis_dir(gan, FLAG_attack_type))
 
         # reconstruction on clean images
         recons_clean, zs = reconstructor.reconstruct(images_pl_transformed, batch_size=batch_size)
@@ -213,13 +227,13 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, FLAGS.detect_image)
+        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, FLAG_detect_image)
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_rec, diffs_mean_rec, roc_info_rec = model_eval_gan(
             sess, images_pl, labels_pl, preds_eval, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAGS.debug, vis_dir=_get_vis_dir(gan, 'clean'))
+            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAG_debug, vis_dir=_get_vis_dir(gan, 'clean'))
 
         # print('Training accuracy: {}'.format(train_acc))
         print('Non Adversarial Eval accuracy: {}'.format(eval_acc))
@@ -274,15 +288,15 @@ def main(cfg, argv=None):
     [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
 
     gan = None
-    if FLAGS.defense_type.lower() != 'none':
-        if FLAGS.defense_type == 'defense_gan':
+    if FLAG_defense_type.lower() != 'none':
+        if FLAG_defense_type == 'defense_gan':
             gan = gan_from_config(cfg, True)
 
             gan.load_model()
 
             # Extract hyperparameters from reconstruction path.
 
-            assert FLAGS.online_training or not FLAGS.train_on_recs
+            assert FLAG_online_training or not FLAG_train_on_recs
 
     if gan is None:
         # TODO NOT USED 2 - USED FOR NO DEFENCE
@@ -297,7 +311,7 @@ def main(cfg, argv=None):
     # results.
     counter = 0
     temp_fp = str(counter) + '_' + result_file_name
-    results_dir = os.path.join(results_dir, FLAGS.results_dir)
+    results_dir = os.path.join(results_dir, FLAG_results_dir)
     temp_final_fp = os.path.join(results_dir, temp_fp)
     while os.path.exists(temp_final_fp):
         counter += 1
@@ -308,16 +322,16 @@ def main(cfg, argv=None):
 
 
     accuracies = whitebox(
-        gan, rec_data_path=FLAGS.rec_path,
+        gan, rec_data_path=FLAG_rec_path,
         batch_size=cfg["BATCH_SIZE"],
-        learning_rate=FLAGS.learning_rate,
-        nb_epochs=FLAGS.nb_epochs,
-        eps=FLAGS.fgsm_eps,
-        online_training=FLAGS.online_training,
+        learning_rate=FLAG_learning_rate,
+        nb_epochs=FLAG_nb_epochs,
+        eps=FLAG_fgsm_eps,
+        online_training=FLAG_online_training,
         defense_type=cfg["TYPE"],
-        num_tests=FLAGS.num_tests,
-        attack_type=FLAGS.attack_type,
-        num_train=FLAGS.num_train,
+        num_tests=FLAG_num_tests,
+        attack_type=FLAG_attack_type,
+        num_train=FLAG_num_train,
         cfg=cfg
     )
 
@@ -345,35 +359,35 @@ def main(cfg, argv=None):
 def _get_results_dir_filename(gan):
     FLAGS = tf.flags.FLAGS
 
-    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(FLAGS.defense_type,"mnist"))
+    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(FLAG_defense_type,"mnist"))
 
-    if FLAGS.defense_type == 'defense_gan':
+    if FLAG_defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
         result_file_name = \
             'Iter={}_RR={:d}_LR={:.4f}_defense_gan'.format(
                 gan.rec_iters,
                 gan.rec_rr,
                 gan.rec_lr,
-                FLAGS.attack_type,
+                FLAG_attack_type,
             )
 
-        if not FLAGS.train_on_recs:
+        if not FLAG_train_on_recs:
             result_file_name = 'orig_' + result_file_name
     else:
         result_file_name = 'nodefense_'
-    if FLAGS.num_tests > -1:
+    if FLAG_num_tests > -1:
         result_file_name = 'numtest={}_'.format(
-            FLAGS.num_tests) + result_file_name
+            FLAG_num_tests) + result_file_name
 
-    if FLAGS.num_train > -1:
+    if FLAG_num_train > -1:
         result_file_name = 'numtrain={}_'.format(
-            FLAGS.num_train) + result_file_name
+            FLAG_num_train) + result_file_name
 
-    if FLAGS.detect_image:
+    if FLAG_detect_image:
         result_file_name = 'det_image_' + result_file_name
 
-    result_file_name = 'model={}_'.format(FLAGS.model) + result_file_name
-    result_file_name += 'attack={}.txt'.format(FLAGS.attack_type)
+    result_file_name = 'model={}_'.format(FLAG_model) + result_file_name
+    result_file_name += 'attack={}.txt'.format(FLAG_attack_type)
     return results_dir, result_file_name
 
 
@@ -407,42 +421,62 @@ if __name__ == '__main__':
     cfg = load_config(args.cfg)
     flags = tf.app.flags
 
+    # flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
+    # flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
+    # flags.DEFINE_string("model", "A", "The classifier model.")
+    # flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training.')
+    # flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train model.')
+    # flags.DEFINE_string('rec_path', None, 'Path to reconstructions.')
+    # flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
+    # flags.DEFINE_boolean("online_training", False, "Train the base classifier on reconstructions.")
     # flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
-    flags = tf.app.flags
-
-    flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
-    flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
-    flags.DEFINE_string("model", "A", "The classifier model.")
-
-    flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
-    flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training.')
-    flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train model.')
-    flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697.')
-    flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
-    flags.DEFINE_string('rec_path', None, 'Path to reconstructions.')
-    flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
-    flags.DEFINE_integer('random_test_iter', -1,
-                         'Number of random sampling for testing the classifier.')
-    flags.DEFINE_boolean("online_training", False, "Train the base classifier on reconstructions.")
+    # flags.DEFINE_string("results_dir", "whitebox", "The final subdirectory of the results.")
+    # flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
+    # flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
+    # flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")
+    # flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
+    # flags.DEFINE_boolean("train_on_recs", False,
+    #                      "Train the classifier on the reconstructed samples "
+    #                      "using Defense-GAN.")
 
 
-    flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
-    flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
-    flags.DEFINE_string("results_dir", "whitebox", "The final subdirectory of the results.")
-    flags.DEFINE_boolean("same_init", False, "Same initialization for z_hats.")
+    # flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
+    # flags = tf.app.flags
+    #
+    # flags.DEFINE_string("attack_type", "fgsm", "Type of attack [fgsm|cw|bpda]")
+    # flags.DEFINE_string("defense_type", "defense_gan", "Type of defense [none|defense_gan|adv_tr]")
 
-    flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
-    flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
-    flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
-    flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
-    flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")
-    flags.DEFINE_boolean("override", False, "Overriding the config values of reconstruction "
-                                            "hyperparameters. It has to be true if either "
-                                            "`--rec_rr`, `--rec_lr`, or `--rec_iters` is passed "
-                                            "from command line.")
-    flags.DEFINE_boolean("train_on_recs", False,
-                         "Train the classifier on the reconstructed samples "
-                         "using Defense-GAN.")
+    # flags.DEFINE_string("model", "A", "The classifier model.")
+    #
+    # flags.DEFINE_integer('nb_classes', 10, 'Number of classes.')
+    # flags.DEFINE_float('learning_rate', 0.001, 'Learning rate for training.')
+    # flags.DEFINE_integer('nb_epochs', 10, 'Number of epochs to train model.')
+    # flags.DEFINE_float('lmbda', 0.1, 'Lambda from arxiv.org/abs/1602.02697.')
+    # flags.DEFINE_float('fgsm_eps', 0.3, 'FGSM epsilon.')
+    # flags.DEFINE_string('rec_path', None, 'Path to reconstructions.')
+    # flags.DEFINE_integer('num_tests', -1, 'Number of test samples.')
+    # flags.DEFINE_integer('random_test_iter', -1,
+    #                      'Number of random sampling for testing the classifier.')
+    # flags.DEFINE_boolean("online_training", False, "Train the base classifier on reconstructions.")
+    #
+    #
+    # flags.DEFINE_integer("attack_iters", 100, 'Number of iterations for cw/pgd attack.')
+    # flags.DEFINE_integer("search_steps", 4, 'Number of binary search steps.')
+    # flags.DEFINE_string("results_dir", "whitebox", "The final subdirectory of the results.")
+    # flags.DEFINE_boolean("same_init", False, "Same initialization for z_hats.")
+    #
+    # flags.DEFINE_string("debug_dir", "temp", "The debug directory.")
+    # flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
+    # flags.DEFINE_boolean("debug", False, "True for saving reconstructions [False]")
+    # flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
+    # flags.DEFINE_boolean("detect_image", False, "True for detection using image data [False]")
+    # flags.DEFINE_boolean("override", False, "Overriding the config values of reconstruction "
+    #                                         "hyperparameters. It has to be true if either "
+    #                                         "`--rec_rr`, `--rec_lr`, or `--rec_iters` is passed "
+    #                                         "from command line.")
+    # flags.DEFINE_boolean("train_on_recs", False,
+    #                      "Train the classifier on the reconstructed samples "
+    #                      "using Defense-GAN.")
 
     main_cfg = lambda x: main(cfg, x)
     tf.app.run(main=main_cfg)

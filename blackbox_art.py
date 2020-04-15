@@ -277,7 +277,7 @@ def get_train_test(data_path, test_on_dev=True, model=None,
     return train_images, train_lables, test_images, test_labels
 
 
-def get_cached_gan_data(gan, test_on_dev, orig_data_flag=None):
+def get_cached_gan_data(gan, test_on_dev, FLAG_num_train, orig_data_flag=None):
     """Fetches the dataset of a GAN model.
     
     Args:
@@ -302,11 +302,11 @@ def get_cached_gan_data(gan, test_on_dev, orig_data_flag=None):
     train_images, train_labels, test_images, test_labels = \
         get_train_test(
             orig_data_path["mnist"], test_on_dev=test_on_dev,
-            model=gan, orig_data=orig_data_flag, max_num=FLAGS.num_train)
+            model=gan, orig_data=orig_data_flag, max_num=FLAG_num_train)
     return train_images, train_labels, test_images, test_labels
 
 
-def blackbox(gan, rec_data_path=None, batch_size=128,
+def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
              learning_rate=0.001, nb_epochs=10, holdout=150, data_aug=6,
              nb_epochs_s=10, lmbda=0.1, online_training=False,
              train_on_recs=False, test_on_dev=False,
@@ -355,7 +355,7 @@ def blackbox(gan, rec_data_path=None, batch_size=128,
         sess = tf.Session(config=config)
 
     train_images, train_labels, test_images, test_labels = \
-        get_cached_gan_data(gan, test_on_dev, orig_data_flag=True)
+        get_cached_gan_data(gan, test_on_dev, FLAG_num_train, orig_data_flag=True)
 
     x_shape, classes = list(train_images.shape[1:]), train_labels.shape[1]
     nb_classes = classes
@@ -622,7 +622,8 @@ def main(cfg, argv=None):
     result_file_name = temp_fp
     sub_result_path = os.path.join(results_dir, result_file_name)
 
-    accuracies = blackbox(gan, rec_data_path=FLAGS.rec_path,
+    accuracies = blackbox(gan, FLAG_num_train,
+                          rec_data_path=FLAGS.rec_path,
                           batch_size=cfg["BATCH_SIZE"],
                           learning_rate=FLAGS.learning_rate,
                           nb_epochs=FLAGS.nb_epochs, holdout=FLAGS.holdout,
