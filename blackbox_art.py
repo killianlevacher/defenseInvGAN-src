@@ -47,6 +47,14 @@ from utils.util_art import save_images_files, ensure_dir, load_config
 from utils.reconstruction_art import Reconstructor
 from utils.reconstruction_art import reconstruct_dataset
 
+
+cfg_REC_RR = 1
+cfg_REC_LR = 0.01
+cfg_REC_ITERS = 200
+cfg_BATCH_SIZE = 50
+cfg_TYPE = "inv"
+# cfg_TYPE = "v2"
+
 FLAGS = flags.FLAGS
 
 #"The architecture of the classifier model.")
@@ -641,7 +649,7 @@ def main(cfg, argv=None):
     gan = None
     # Setting test time reconstruction hyper parameters.
     # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
-    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
+    [tr_rr, tr_lr, tr_iters] = [cfg_REC_RR, cfg_REC_LR, cfg_REC_ITERS]
 
     if FLAGS_defense_type.lower() != 'none':
         if FLAGS_defense_type == 'defense_gan':
@@ -684,7 +692,7 @@ def main(cfg, argv=None):
 
     accuracies = blackbox(gan, FLAGS_num_train,
                           rec_data_path=FLAGS_rec_path,
-                          batch_size=cfg["BATCH_SIZE"],
+                          batch_size=cfg_BATCH_SIZE,
                           learning_rate=FLAGS_learning_rate,
                           nb_epochs=FLAGS_nb_epochs, holdout=FLAGS_holdout,
                           data_aug=FLAGS_data_aug,
@@ -692,7 +700,7 @@ def main(cfg, argv=None):
                           lmbda=FLAGS_lmbda,
                           online_training=FLAGS_online_training,
                           train_on_recs=FLAGS_train_on_recs,
-                          defense_type=cfg["TYPE"])
+                          defense_type=cfg_TYPE)
 
 
     ensure_dir(results_dir)

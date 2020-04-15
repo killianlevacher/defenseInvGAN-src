@@ -55,7 +55,7 @@ attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0} }
 
 
 cfg_TYPE = "inv"
-cfg_TYPE = "v2"
+# cfg_TYPE = "v2"
 cfg_BATCH_SIZE = 50
 cfg_REC_RR = 1
 cfg_REC_LR = 0.01
