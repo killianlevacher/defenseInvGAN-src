@@ -53,6 +53,17 @@ orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
 orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
 attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0} }
 
+
+cfg_TYPE = "inv"
+cfg_TYPE = "v2"
+cfg_BATCH_SIZE = 50
+cfg_REC_RR = 1
+cfg_REC_LR = 0.01
+cfg_REC_ITERS = 200
+cfg_DATASET_NAME = "mnist"
+cfg_USE_RESBLOCK = False
+
+
 # "Type of defense [none|defense_gan|adv_tr]"
 FLAG_defense_type = "defense_gan"
 #"True for loading from saved classifier models [False]"
@@ -262,14 +273,14 @@ import re
 
 def gan_from_config(cfg, test_mode):
 # from config.py
-    if cfg['TYPE'] == 'v2':
+    if cfg_TYPE == 'v2':
         gan = DefenseGANv2(
-            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            get_generator_fn(cfg_DATASET_NAME, cfg_USE_RESBLOCK), cfg=cfg,
             test_mode=test_mode,
         )
-    elif cfg['TYPE'] == 'inv':
+    elif cfg_TYPE == 'inv':
         gan = InvertorDefenseGAN(
-            get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+            get_generator_fn(cfg_DATASET_NAME, cfg_USE_RESBLOCK), cfg=cfg,
             test_mode=test_mode,
         )
     else:
@@ -285,7 +296,7 @@ def main(cfg, argv=None):
 
     # Setting test time reconstruction hyper parameters.
     # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
-    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
+    [tr_rr, tr_lr, tr_iters] = [cfg_REC_RR, cfg_REC_LR, cfg_REC_ITERS]
 
     gan = None
     if FLAG_defense_type.lower() != 'none':
@@ -323,12 +334,12 @@ def main(cfg, argv=None):
 
     accuracies = whitebox(
         gan, rec_data_path=FLAG_rec_path,
-        batch_size=cfg["BATCH_SIZE"],
+        batch_size=cfg_BATCH_SIZE,
         learning_rate=FLAG_learning_rate,
         nb_epochs=FLAG_nb_epochs,
         eps=FLAG_fgsm_eps,
         online_training=FLAG_online_training,
-        defense_type=cfg["TYPE"],
+        defense_type=cfg_TYPE,
         num_tests=FLAG_num_tests,
         attack_type=FLAG_attack_type,
         num_train=FLAG_num_train,
