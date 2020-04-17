@@ -33,11 +33,9 @@ import time
 import numpy as np
 import tensorflow as tf
 
-
 from cleverhans.attacks import FastGradientMethod
 from cleverhans.utils import set_log_level, AccuracyReport
-from cleverhans.utils_tf import  model_eval
-
+from cleverhans.utils_tf import model_eval
 
 from blackbox_art import get_cached_gan_data, get_reconstructor
 from models.gan_v2_art import DefenseGANv2, InvertorDefenseGAN
@@ -47,12 +45,10 @@ from utils.util_art import ensure_dir
 from utils.util_art import get_generator_fn
 from utils.network_builder_art import model_a
 
-
 #################
 orig_data_paths = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
 orig_data_path = {k: 'data/cache/{}_pkl'.format(k) for k in ['mnist']}
-attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0} }
-
+attack_config_dict = {'mnist': {'eps': 0.3, 'clip_min': 0}}
 
 cfg_TYPE = "inv"
 # cfg_TYPE = "v2"
@@ -63,12 +59,60 @@ cfg_REC_ITERS = 200
 cfg_DATASET_NAME = "mnist"
 cfg_USE_RESBLOCK = False
 
+cfg = {'TYPE':'inv',
+       'MODE':'hingegan',
+       'BATCH_SIZE':50,
+       'USE_BN':True,
+       'USE_RESBLOCK':False,
+       'LATENT_DIM':128,
+       'GRADIENT_PENALTY_LAMBDA':10.0,
+       'OUTPUT_DIR':'output',
+       'NET_DIM':64,
+       'TRAIN_ITERS':20000,
+       'DISC_LAMBDA':0.0,
+       'TV_LAMBDA':0.0,
+       'ATTRIBUTE':None,
+       'TEST_BATCH_SIZE':20,
+       'NUM_GPUS':1,
+       'INPUT_TRANSFORM_TYPE':0,
+       'ENCODER_LR':0.0002,
+       'GENERATOR_LR':0.0001,
+       'DISCRIMINATOR_LR':0.0004,
+       'DISCRIMINATOR_REC_LR':0.0004,
+       'USE_ENCODER_INIT':True,
+       'ENCODER_LOSS_TYPE':'margin',
+       'REC_LOSS_SCALE':100.0,
+       'REC_DISC_LOSS_SCALE':1.0,
+       'LATENT_REG_LOSS_SCALE':0.5,
+       'REC_MARGIN':0.02,
+       'ENC_DISC_TRAIN_ITER':0,
+       'ENC_TRAIN_ITER':1,
+       'DISC_TRAIN_ITER':1,
+       'GENERATOR_INIT_PATH':'output/gans/mnist',
+       'ENCODER_INIT_PATH':'none',
+       'ENC_DISC_LR':1e-05,
+       'NO_TRAINING_IMAGES':True,
+       'GEN_SAMPLES_DISC_LOSS_SCALE':1.0,
+       'LATENTS_TO_Z_LOSS_SCALE':1.0,
+       'REC_CYCLED_LOSS_SCALE':100.0,
+       'GEN_SAMPLES_FAKING_LOSS_SCALE':1.0,
+       'DATASET_NAME':'mnist',
+       'ARCH_TYPE':'mnist',
+       'REC_ITERS':200,
+       'REC_LR':0.01,
+       'REC_RR':1,
+       'IMAGE_DIM':[28, 28, 1],
+       'INPUR_TRANSFORM_TYPE':1,
+       'BPDA_ENCODER_CP_PATH':'output/gans_inv_notrain/mnist',
+       'BPDA_GENERATOR_INIT_PATH':'output/gans/mnist',
+       'cfg_path':'experiments/cfgs/gans_inv_notrain/mnist.yml'
+       }
 
 # "Type of defense [none|defense_gan|adv_tr]"
 FLAG_defense_type = "defense_gan"
-#"True for loading from saved classifier models [False]"
+# "True for loading from saved classifier models [False]"
 FLAG_load_classifier = True
-#"Type of attack [fgsm|cw|bpda]"
+# "Type of attack [fgsm|cw|bpda]"
 FLAG_attack_type = "fgsm"
 FLAG_model = "A"
 FLAG_learning_rate = 0.001
@@ -84,8 +128,8 @@ FLAG_detect_image = False
 FLAG_fgsm_eps = 0.3
 FLAG_train_on_recs = False
 
-def get_diff_op(classifier, x1, x2, use_image=False):
 
+def get_diff_op(classifier, x1, x2, use_image=False):
     if use_image:
         f1 = x1
         f2 = x2
@@ -121,7 +165,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
          defense_type: String representing the type of attack. Can be `none`,
             `defense_gan`, or `adv_tr`.
     """
-    
+
     FLAGS = tf.flags.FLAGS
     rng = np.random.RandomState([11, 24, 1990])
 
@@ -132,7 +176,8 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     eps = attack_config_dict[gan.dataset_name]['eps']
     min_val = attack_config_dict[gan.dataset_name]['clip_min']
 
-    train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, FLAG_num_train, orig_data_flag=True)
+    train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, FLAG_num_train,
+                                                                               orig_data_flag=True)
 
     SUB_BATCH_SIZE = batch_size
     test_images = test_images[:SUB_BATCH_SIZE]
@@ -193,12 +238,11 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
             print('[-] Cannot load classifier ...')
             classifier_load_success = False
 
-
     # Calculate training error.
     eval_params = {'batch_size': batch_size}
 
     # Evaluate trained model
-    #train_acc = model_eval(sess, images_pl, labels_pl, preds_eval, train_images, train_labels,
+    # train_acc = model_eval(sess, images_pl, labels_pl, preds_eval, train_images, train_labels,
     #                       args=eval_params)
     # print('[#] Train acc: {}'.format(train_acc))
 
@@ -230,7 +274,8 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         acc_adv, diffs_mean, roc_info_adv = model_eval_gan(
             sess, images_pl, labels_pl, preds_adv, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=FLAG_debug, vis_dir=_get_vis_dir(gan, FLAG_attack_type))
+            z_norm=z_norm, recons_adv=recons_adv, adv_x=adv_x, debug=FLAG_debug,
+            vis_dir=_get_vis_dir(gan, FLAG_attack_type))
 
         # reconstruction on clean images
         recons_clean, zs = reconstructor.reconstruct(images_pl_transformed, batch_size=batch_size)
@@ -244,7 +289,8 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
         acc_rec, diffs_mean_rec, roc_info_rec = model_eval_gan(
             sess, images_pl, labels_pl, preds_eval, None,
             test_images=test_images, test_labels=test_labels, args=eval_params, diff_op=diff_op,
-            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAG_debug, vis_dir=_get_vis_dir(gan, 'clean'))
+            z_norm=z_norm, recons_adv=recons_clean, adv_x=images_pl, debug=FLAG_debug,
+            vis_dir=_get_vis_dir(gan, 'clean'))
 
         # print('Training accuracy: {}'.format(train_acc))
         print('Non Adversarial Eval accuracy: {}'.format(eval_acc))
@@ -271,8 +317,9 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
 
 import re
 
+
 def gan_from_config(cfg, test_mode):
-# from config.py
+    # from config.py
     if cfg_TYPE == 'v2':
         gan = DefenseGANv2(
             get_generator_fn(cfg_DATASET_NAME, cfg_USE_RESBLOCK), cfg=cfg,
@@ -287,6 +334,7 @@ def gan_from_config(cfg, test_mode):
         raise Exception("dummy")
         # gan = DefenseGANBase(cfg=cfg, test_mode=test_mode)
     return gan
+
 
 def main(cfg, argv=None):
     FLAGS = tf.app.flags.FLAGS
@@ -331,7 +379,6 @@ def main(cfg, argv=None):
     result_file_name = temp_fp
     sub_result_path = os.path.join(results_dir, result_file_name)
 
-
     accuracies = whitebox(
         gan, rec_data_path=FLAG_rec_path,
         batch_size=cfg_BATCH_SIZE,
@@ -370,7 +417,7 @@ def main(cfg, argv=None):
 def _get_results_dir_filename(gan):
     FLAGS = tf.flags.FLAGS
 
-    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(FLAG_defense_type,"mnist"))
+    results_dir = os.path.join('results', 'whitebox_{}_{}'.format(FLAG_defense_type, "mnist"))
 
     if FLAG_defense_type == 'defense_gan':
         results_dir = gan.checkpoint_dir.replace('output', 'results')
@@ -429,7 +476,7 @@ if __name__ == '__main__':
     # experiments/config files into FLAGS.param_name and can be passed in from command line.
     # arguments : python whitebox.py --cfg <config_path> --<param_name> <param_value>
 
-    cfg = load_config(args.cfg)
+    # cfg = load_config(args.cfg)
     flags = tf.app.flags
 
     # flags.DEFINE_boolean("load_classifier", True, "True for loading from saved classifier models [False]")
@@ -449,7 +496,6 @@ if __name__ == '__main__':
     # flags.DEFINE_boolean("train_on_recs", False,
     #                      "Train the classifier on the reconstructed samples "
     #                      "using Defense-GAN.")
-
 
     # flags.DEFINE_integer("num_train", -1, 'Number of training data to load.')
     # flags = tf.app.flags

@@ -55,6 +55,55 @@ cfg_BATCH_SIZE = 50
 cfg_TYPE = "inv"
 # cfg_TYPE = "v2"
 
+cfg = {'TYPE':'inv',
+       'MODE':'hingegan',
+       'BATCH_SIZE':50,
+       'USE_BN':True,
+       'USE_RESBLOCK':False,
+       'LATENT_DIM':128,
+       'GRADIENT_PENALTY_LAMBDA':10.0,
+       'OUTPUT_DIR':'output',
+       'NET_DIM':64,
+       'TRAIN_ITERS':20000,
+       'DISC_LAMBDA':0.0,
+       'TV_LAMBDA':0.0,
+       'ATTRIBUTE':None,
+       'TEST_BATCH_SIZE':20,
+       'NUM_GPUS':1,
+       'INPUT_TRANSFORM_TYPE':0,
+       'ENCODER_LR':0.0002,
+       'GENERATOR_LR':0.0001,
+       'DISCRIMINATOR_LR':0.0004,
+       'DISCRIMINATOR_REC_LR':0.0004,
+       'USE_ENCODER_INIT':True,
+       'ENCODER_LOSS_TYPE':'margin',
+       'REC_LOSS_SCALE':100.0,
+       'REC_DISC_LOSS_SCALE':1.0,
+       'LATENT_REG_LOSS_SCALE':0.5,
+       'REC_MARGIN':0.02,
+       'ENC_DISC_TRAIN_ITER':0,
+       'ENC_TRAIN_ITER':1,
+       'DISC_TRAIN_ITER':1,
+       'GENERATOR_INIT_PATH':'output/gans/mnist',
+       'ENCODER_INIT_PATH':'none',
+       'ENC_DISC_LR':1e-05,
+       'NO_TRAINING_IMAGES':True,
+       'GEN_SAMPLES_DISC_LOSS_SCALE':1.0,
+       'LATENTS_TO_Z_LOSS_SCALE':1.0,
+       'REC_CYCLED_LOSS_SCALE':100.0,
+       'GEN_SAMPLES_FAKING_LOSS_SCALE':1.0,
+       'DATASET_NAME':'mnist',
+       'ARCH_TYPE':'mnist',
+       'REC_ITERS':200,
+       'REC_LR':0.01,
+       'REC_RR':1,
+       'IMAGE_DIM':[28, 28, 1],
+       'INPUR_TRANSFORM_TYPE':1,
+       'BPDA_ENCODER_CP_PATH':'output/gans_inv_notrain/mnist',
+       'BPDA_GENERATOR_INIT_PATH':'output/gans/mnist',
+       'cfg_path':'experiments/cfgs/gans_inv_notrain/mnist.yml'
+       }
+
 FLAGS = flags.FLAGS
 
 #"The architecture of the classifier model.")
@@ -742,7 +791,7 @@ if __name__ == '__main__':
     # Note: The load_config() call will convert all the parameters that are defined in
     # experiments/config files into FLAGS.param_name and can be passed in from command line.
     # arguments : python blackbox.py --cfg <config_path> --<param_name> <param_value>
-    cfg = load_config(args.cfg)
+    # cfg = load_config(args.cfg)
     flags = tf.app.flags
 
     # ISSUE: the classifiers provided by authors only contain model A - other models need to be trained
