@@ -753,20 +753,23 @@ def main(cfg, argv=None):
         gan.rec_iters = int(tr_iters)
 
     # Setting the reuslts directory
-    results_dir, result_file_name = _get_results_dir_filename(gan)
+    #Killian Removed
+    # results_dir, result_file_name = _get_results_dir_filename(gan)
 
     # Result file name. The counter makes sure we are not overwriting the
     # results.
-    counter = 0
-    temp_fp = str(counter) + '_' + result_file_name
-    results_dir = os.path.join(results_dir, FLAGS_results_dir)
-    temp_final_fp = os.path.join(results_dir, temp_fp)
-    while os.path.exists(temp_final_fp):
-        counter += 1
-        temp_fp = str(counter) + '_' + result_file_name
-        temp_final_fp = os.path.join(results_dir, temp_fp)
-    result_file_name = temp_fp
-    sub_result_path = os.path.join(results_dir, result_file_name)
+
+    # Killian Removed
+    # counter = 0
+    # temp_fp = str(counter) + '_' + result_file_name
+    # results_dir = os.path.join(results_dir, FLAGS_results_dir)
+    # temp_final_fp = os.path.join(results_dir, temp_fp)
+    # while os.path.exists(temp_final_fp):
+    #     counter += 1
+    #     temp_fp = str(counter) + '_' + result_file_name
+    #     temp_final_fp = os.path.join(results_dir, temp_fp)
+    # result_file_name = temp_fp
+    # sub_result_path = os.path.join(results_dir, result_file_name)
 
     accuracies = blackbox(gan, FLAGS_num_train,
                           rec_data_path=FLAGS_rec_path,
