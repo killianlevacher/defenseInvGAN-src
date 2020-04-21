@@ -542,16 +542,16 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     images_tensor = tf.placeholder(tf.float32, shape=[None] + x_shape)
     labels_tensor = tf.placeholder(tf.float32, shape=(None, classes))
 
-    rng = np.random.RandomState([11, 24, 1990])
+    # rng = np.random.RandomState([11, 24, 1990])
 
     train_images_bb, train_labels_bb, test_images_bb, test_labels_bb = \
         train_images, train_labels, test_images, \
         test_labels
 
-    cur_gan = gan
-    if FLAGS_debug:
-        train_images_bb = train_images_bb[:20 * batch_size]
-        train_labels_bb = train_labels_bb[:20 * batch_size]
+    # cur_gan = gan
+    # if FLAGS_debug:
+    #     train_images_bb = train_images_bb[:20 * batch_size]
+    #     train_labels_bb = train_labels_bb[:20 * batch_size]
 
     # Killian removed
     # Prepare the black_box model.
@@ -583,15 +583,15 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     #     substitute_model=sub_model, dataset_name=gan.dataset_name
     # )
 
-    accuracies['sub'] = 0
+    # accuracies['sub'] = 0
 
     # Initialize the Fast Gradient Sign Method (FGSM) attack object.
-    eps = attack_config_dict[gan.dataset_name]['eps']
-    min_val = attack_config_dict[gan.dataset_name]['clip_min']
+    # eps = attack_config_dict[gan.dataset_name]['eps']
+    # min_val = attack_config_dict[gan.dataset_name]['clip_min']
 
-    fgsm_par = {
-        'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.
-    }
+    # fgsm_par = {
+    #     'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.
+    # }
 
     # Killian removed
     # fgsm = FastGradientMethod(model, sess=sess)
@@ -721,90 +721,41 @@ def _get_results_dir_filename(gan):
 
 
 def main(cfg, argv=None):
-    FLAGS = tf.app.flags.FLAGS
-
-    tf.set_random_seed(11241990)
-    np.random.seed(11241990)
-
-    gan = None
-    # Setting test time reconstruction hyper parameters.
-    # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
-    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
-
-    if FLAGS_defense_type.lower() != 'none':
-        if FLAGS_defense_type == 'defense_gan':
-            gan = gan_from_config(cfg, True)
-
-            gan.load_model()
-
-            # extract hyper parameters from reconstruction path.
-            if FLAGS_rec_path is not None:
-                train_param_re = re.compile('recs_rr(.*)_lr(.*)_iters(.*)')
-                [tr_rr, tr_lr, tr_iters] = \
-                    train_param_re.findall(FLAGS_rec_path)[0]
-                gan.rec_rr = int(tr_rr)
-                gan.rec_lr = float(tr_lr)
-                gan.rec_iters = int(tr_iters)
-            else:
-                assert FLAGS_online_training or not FLAGS_train_on_recs
 
 
-    if FLAGS_override:
-        gan.rec_rr = int(tr_rr)
-        gan.rec_lr = float(tr_lr)
-        gan.rec_iters = int(tr_iters)
+    # tf.set_random_seed(11241990)
+    # np.random.seed(11241990)
 
-    # Setting the reuslts directory
-    #Killian Removed
-    # results_dir, result_file_name = _get_results_dir_filename(gan)
+    gan = gan_from_config(cfg, True)
 
-    # Result file name. The counter makes sure we are not overwriting the
-    # results.
+    gan.load_model()
 
-    # Killian Removed
-    # counter = 0
-    # temp_fp = str(counter) + '_' + result_file_name
-    # results_dir = os.path.join(results_dir, FLAGS_results_dir)
-    # temp_final_fp = os.path.join(results_dir, temp_fp)
-    # while os.path.exists(temp_final_fp):
-    #     counter += 1
-    #     temp_fp = str(counter) + '_' + result_file_name
-    #     temp_final_fp = os.path.join(results_dir, temp_fp)
-    # result_file_name = temp_fp
-    # sub_result_path = os.path.join(results_dir, result_file_name)
+    gan_defense_flag = False
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
 
-    accuracies = blackbox(gan, FLAGS_num_train,
-                          rec_data_path=FLAGS_rec_path,
-                          batch_size=cfg["BATCH_SIZE"],
-                          learning_rate=FLAGS_learning_rate,
-                          nb_epochs=FLAGS_nb_epochs, holdout=FLAGS_holdout,
-                          data_aug=FLAGS_data_aug,
-                          nb_epochs_s=FLAGS_nb_epochs_s,
-                          lmbda=FLAGS_lmbda,
-                          online_training=FLAGS_online_training,
-                          train_on_recs=FLAGS_train_on_recs,
-                          defense_type=cfg["TYPE"])
+    test_on_dev = False
+    train_images, train_labels, test_images, test_labels = \
+        get_cached_gan_data(gan, test_on_dev, FLAGS_num_train, orig_data_flag=True)
 
+    x_shape, classes = list(train_images.shape[1:]), train_labels.shape[1]
+    nb_classes = classes
 
-    ensure_dir(results_dir)
+    ######## Killian test
+    images_tensor = tf.placeholder(tf.float32, shape=[None] + x_shape)
+    labels_tensor = tf.placeholder(tf.float32, shape=(None, classes))
 
-    with open(sub_result_path, 'a') as f:
-        f.writelines([str(accuracies['acc_adv']) + ' ' + str(accuracies['acc_rec']) + '\n'])
-        print('[*] saved accuracy in {}'.format(sub_result_path))
+    reconstructor = get_reconstructor(gan)
 
-    if accuracies['roc_info_adv']:  # For attack detection.
-        pkl_result_path = sub_result_path.replace('.txt', '_roc.pkl')
-        with open(pkl_result_path, 'wb') as f:
-            pickle.dump(accuracies['roc_info_adv'], f)
-            # cPickle.dump(accuracies['roc_info_adv'], f, cPickle.HIGHEST_PROTOCOL)
-            print('[*] saved roc_info in {}'.format(pkl_result_path))
+    x_rec_orig, _ = reconstructor.reconstruct(images_tensor, batch_size=cfg["BATCH_SIZE"], reconstructor_id=3)
+    image_batch = train_images[:cfg["BATCH_SIZE"]]
+    with open("./debug/image_batch.pkl", 'wb') as f:
+        pickle.dump(image_batch, f)
+    x_rec_orig_val = sess.run(x_rec_orig, feed_dict={images_tensor: image_batch})
+    save_images_files(x_rec_orig_val, output_dir="debug/blackbox/tempKillian", postfix='orig_rec')
+    ######## Killian test
 
-    if accuracies['roc_info_rec']:  # For attack detection.
-        pkl_result_path = sub_result_path.replace('.txt', '_roc_clean.pkl')
-        with open(pkl_result_path, 'wb') as f:
-            pickle.dump(accuracies['roc_info_rec'], f)
-            # cPickle.dump(accuracies['roc_info_rec'], f, cPickle.HIGHEST_PROTOCOL)
-            print('[*] saved roc_info_clean in {}'.format(pkl_result_path))
 
 
 def parse_args():
