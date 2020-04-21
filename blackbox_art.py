@@ -48,11 +48,11 @@ from utils.reconstruction_art import Reconstructor
 from utils.reconstruction_art import reconstruct_dataset
 
 
-cfg_REC_RR = 1
-cfg_REC_LR = 0.01
-cfg_REC_ITERS = 200
-cfg_BATCH_SIZE = 50
-cfg_TYPE = "inv"
+# cfg_REC_RR = 1
+# cfg_REC_LR = 0.01
+# cfg_REC_ITERS = 200
+# cfg_BATCH_SIZE = 50
+# cfg_TYPE = "inv"
 # cfg_TYPE = "v2"
 
 cfg = {'TYPE':'inv',
@@ -477,6 +477,21 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     x_shape, classes = list(train_images.shape[1:]), train_labels.shape[1]
     nb_classes = classes
 
+
+
+    ######## Killian test
+    images_tensor = tf.placeholder(tf.float32, shape=[None] + x_shape)
+    labels_tensor = tf.placeholder(tf.float32, shape=(None, classes))
+
+    reconstructor = get_reconstructor(gan)
+
+    x_rec_orig, _ = reconstructor.reconstruct(images_tensor, batch_size=cfg["BATCH_SIZE"], reconstructor_id=3)
+    image_batch = train_images[:cfg["BATCH_SIZE"]]
+    x_rec_orig_val = sess.run(x_rec_orig, feed_dict={images_tensor: image_batch})
+    save_images_files(x_rec_orig_val, output_dir="debug/blackbox/tempKillian", postfix='orig_rec')
+    ######## Killian test
+
+
     type_to_models = {
         'A': model_a, 'E': model_e, 'F': model_f
     }
@@ -712,7 +727,7 @@ def main(cfg, argv=None):
     gan = None
     # Setting test time reconstruction hyper parameters.
     # [tr_rr, tr_lr, tr_iters] = [FLAGS.rec_rr, FLAGS.rec_lr, FLAGS.rec_iters]
-    [tr_rr, tr_lr, tr_iters] = [cfg_REC_RR, cfg_REC_LR, cfg_REC_ITERS]
+    [tr_rr, tr_lr, tr_iters] = [cfg["REC_RR"], cfg["REC_LR"], cfg["REC_ITERS"]]
 
     if FLAGS_defense_type.lower() != 'none':
         if FLAGS_defense_type == 'defense_gan':
@@ -755,7 +770,7 @@ def main(cfg, argv=None):
 
     accuracies = blackbox(gan, FLAGS_num_train,
                           rec_data_path=FLAGS_rec_path,
-                          batch_size=cfg_BATCH_SIZE,
+                          batch_size=cfg["BATCH_SIZE"],
                           learning_rate=FLAGS_learning_rate,
                           nb_epochs=FLAGS_nb_epochs, holdout=FLAGS_holdout,
                           data_aug=FLAGS_data_aug,
@@ -763,7 +778,7 @@ def main(cfg, argv=None):
                           lmbda=FLAGS_lmbda,
                           online_training=FLAGS_online_training,
                           train_on_recs=FLAGS_train_on_recs,
-                          defense_type=cfg_TYPE)
+                          defense_type=cfg["TYPE"])
 
 
     ensure_dir(results_dir)
