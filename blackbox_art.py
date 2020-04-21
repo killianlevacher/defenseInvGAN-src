@@ -481,14 +481,15 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         'A': model_a, 'E': model_e, 'F': model_f
     }
 
-    with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-        bb_model = type_to_models[FLAGS_bb_model](
-            input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
-        )
-    with tf.variable_scope("Substitute", reuse=tf.AUTO_REUSE):
-        sub_model = type_to_models[FLAGS_sub_model](
-            input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
-        )
+    # Killian removed
+    # with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
+    #     bb_model = type_to_models[FLAGS_bb_model](
+    #         input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
+    #     )
+    # with tf.variable_scope("Substitute", reuse=tf.AUTO_REUSE):
+    #     sub_model = type_to_models[FLAGS_sub_model](
+    #         input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
+    #     )
 
     # Killian inserted
     # if FLAGS_debug:
@@ -535,6 +536,7 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         train_images_bb = train_images_bb[:20 * batch_size]
         train_labels_bb = train_labels_bb[:20 * batch_size]
 
+    # Killian removed
     # Prepare the black_box model.
     # prep_bbox_out = prep_bbox(
     #     sess, images_tensor, labels_tensor, train_images_bb,
@@ -543,6 +545,7 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     #     adv_training=adv_training,
     #     cnn_arch=bb_model)
 
+    # Killian removed
     #accuracies['bbox'] is the legitimate accuracy
     # model, bbox_preds, accuracies['bbox'] = prep_bbox_out
 
@@ -553,6 +556,7 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     reconstructor = get_reconstructor(gan)
     recon_tensors, _ = reconstructor.reconstruct(images_tensor, batch_size=batch_size, reconstructor_id=2)
 
+    # Killian removed
     # model_sub, preds_sub = train_sub(
     #     sess, images_tensor, labels_tensor,
     #     model.get_logits(recon_tensors), images_sub,
@@ -572,16 +576,20 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.
     }
 
+    # Killian removed
     # fgsm = FastGradientMethod(model, sess=sess)
     # fgsm = FastGradientMethod(model_sub, sess=sess)
 
     # Craft adversarial examples using the substitute.
     eval_params = {'batch_size': batch_size}
+
+    # Killian removed
     # x_adv_sub = fgsm.generate(images_tensor, **fgsm_par)
 
     #TODO this is where the creation of the adverse example is done
     if gan is not None:  # To see some qualitative results.
     # if FLAGS_debug and gan is not None:  # To see some qualitative results.
+    # Killian removed
     #     recon_tensors, _ = reconstructor.reconstruct(x_adv_sub, batch_size=batch_size, reconstructor_id=2)
         x_rec_orig, _ = reconstructor.reconstruct(images_tensor, batch_size=batch_size, reconstructor_id=3)
 
