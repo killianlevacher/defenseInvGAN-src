@@ -179,6 +179,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     train_images, train_labels, test_images, test_labels = get_cached_gan_data(gan, test_on_dev, FLAG_num_train,
                                                                                orig_data_flag=True)
 
+    #Killian Step: Making sure batches are the correct size
     SUB_BATCH_SIZE = batch_size
     test_images = test_images[:SUB_BATCH_SIZE]
     test_labels = test_labels[:SUB_BATCH_SIZE]
@@ -194,6 +195,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     images_pl = tf.placeholder(tf.float32, shape=[None] + list(train_images.shape[1:]))
     labels_pl = tf.placeholder(tf.float32, shape=[None] + [train_labels.shape[1]])
 
+    #Killian Step: getting the logits of attacked model and calculating accuracy on authentic x
     # Creating classificaion model
     images_pl_transformed = images_pl
     model = model_a
@@ -250,7 +252,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
                           args=eval_params)
     print('[#] Non Adversarial Eval accuracy: {}'.format(eval_acc))
 
-    reconstructor = get_reconstructor(gan)
+    reconstructor = get_reconstructor(gan) #Killian STEP getting the reconstructor from GAN
 
     if attack_type is None:
         return eval_acc, 0, None
@@ -258,17 +260,17 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     attack_params = {'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.}
     attack_obj = FastGradientMethod(model, sess=sess)
 
-    adv_x = attack_obj.generate(images_pl_transformed, **attack_params)
+    adv_x = attack_obj.generate(images_pl_transformed, **attack_params) #Killian STEP getting the adversarial content
 
-    if FLAG_defense_type == 'defense_gan':
+    if FLAG_defense_type == 'defense_gan': #Killian STEP doing the defence
 
-        recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123)
+        recons_adv, zs = reconstructor.reconstruct(adv_x, batch_size=batch_size, reconstructor_id=123) # recons_adv = Tensor("StopGradient_3:0, shape=(50,28,28,1), dtype=float32)
 
-        preds_adv = model.get_logits(recons_adv)
+        preds_adv = model.get_logits(recons_adv) #Killian preds_Adv = Tensor("add_128:0, shape=(50,10), dtype=float32)
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, adv_x, recons_adv, FLAG_detect_image)
+        diff_op = get_diff_op(model, adv_x, recons_adv, FLAG_detect_image) #Killian getting the difference between the two sets of images
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_adv, diffs_mean, roc_info_adv = model_eval_gan(
@@ -278,12 +280,12 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
             vis_dir=_get_vis_dir(gan, FLAG_attack_type))
 
         # reconstruction on clean images
-        recons_clean, zs = reconstructor.reconstruct(images_pl_transformed, batch_size=batch_size)
+        recons_clean, zs = reconstructor.reconstruct(images_pl_transformed, batch_size=batch_size) # Doing a reconstruction on a clean image
         preds_eval = model.get_logits(recons_clean)
 
         sess.run(tf.local_variables_initializer())
 
-        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, FLAG_detect_image)
+        diff_op = get_diff_op(model, images_pl_transformed, recons_clean, FLAG_detect_image) #Killian doing a dif between the reconstructed and clean image
         z_norm = tf.reduce_sum(tf.square(zs), axis=1)
 
         acc_rec, diffs_mean_rec, roc_info_rec = model_eval_gan(

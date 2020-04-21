@@ -490,12 +490,15 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
             input_shape=[None] + x_shape, nb_classes=train_labels.shape[1],
         )
 
-    if FLAGS_debug:
+    # Killian inserted
+    # if FLAGS_debug:
+    if True:
         train_images = train_images[:20 * batch_size]
         train_labels = train_labels[:20 * batch_size]
         debug_dir = os.path.join('debug', 'blackbox', FLAGS_debug_dir)
         ensure_dir(debug_dir)
         x_debug_test = test_images[:batch_size]
+
 
     # Initialize substitute training set reserved for adversary
     images_sub = test_images[:holdout]
@@ -533,15 +536,15 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         train_labels_bb = train_labels_bb[:20 * batch_size]
 
     # Prepare the black_box model.
-    prep_bbox_out = prep_bbox(
-        sess, images_tensor, labels_tensor, train_images_bb,
-        train_labels_bb, test_images_bb, test_labels_bb, nb_epochs,
-        batch_size, learning_rate, rng=rng, gan=cur_gan,
-        adv_training=adv_training,
-        cnn_arch=bb_model)
+    # prep_bbox_out = prep_bbox(
+    #     sess, images_tensor, labels_tensor, train_images_bb,
+    #     train_labels_bb, test_images_bb, test_labels_bb, nb_epochs,
+    #     batch_size, learning_rate, rng=rng, gan=cur_gan,
+    #     adv_training=adv_training,
+    #     cnn_arch=bb_model)
 
     #accuracies['bbox'] is the legitimate accuracy
-    model, bbox_preds, accuracies['bbox'] = prep_bbox_out
+    # model, bbox_preds, accuracies['bbox'] = prep_bbox_out
 
 
 
@@ -550,14 +553,14 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
     reconstructor = get_reconstructor(gan)
     recon_tensors, _ = reconstructor.reconstruct(images_tensor, batch_size=batch_size, reconstructor_id=2)
 
-    model_sub, preds_sub = train_sub(
-        sess, images_tensor, labels_tensor,
-        model.get_logits(recon_tensors), images_sub,
-        labels_sub,
-        nb_classes, nb_epochs_s, batch_size,
-        learning_rate, data_aug, lmbda, rng=rng,
-        substitute_model=sub_model, dataset_name=gan.dataset_name
-    )
+    # model_sub, preds_sub = train_sub(
+    #     sess, images_tensor, labels_tensor,
+    #     model.get_logits(recon_tensors), images_sub,
+    #     labels_sub,
+    #     nb_classes, nb_epochs_s, batch_size,
+    #     learning_rate, data_aug, lmbda, rng=rng,
+    #     substitute_model=sub_model, dataset_name=gan.dataset_name
+    # )
 
     accuracies['sub'] = 0
 
@@ -569,30 +572,33 @@ def blackbox(gan, FLAG_num_train, rec_data_path=None, batch_size=128,
         'eps': eps, 'ord': np.inf, 'clip_min': min_val, 'clip_max': 1.
     }
 
-    fgsm = FastGradientMethod(model_sub, sess=sess)
+    # fgsm = FastGradientMethod(model, sess=sess)
+    # fgsm = FastGradientMethod(model_sub, sess=sess)
 
     # Craft adversarial examples using the substitute.
     eval_params = {'batch_size': batch_size}
-    x_adv_sub = fgsm.generate(images_tensor, **fgsm_par)
+    # x_adv_sub = fgsm.generate(images_tensor, **fgsm_par)
 
-    if FLAGS_debug and gan is not None:  # To see some qualitative results.
-        recon_tensors, _ = reconstructor.reconstruct(x_adv_sub, batch_size=batch_size, reconstructor_id=2)
+    #TODO this is where the creation of the adverse example is done
+    if gan is not None:  # To see some qualitative results.
+    # if FLAGS_debug and gan is not None:  # To see some qualitative results.
+    #     recon_tensors, _ = reconstructor.reconstruct(x_adv_sub, batch_size=batch_size, reconstructor_id=2)
         x_rec_orig, _ = reconstructor.reconstruct(images_tensor, batch_size=batch_size, reconstructor_id=3)
 
-        x_adv_sub_val = sess.run(x_adv_sub, feed_dict={images_tensor: x_debug_test})
-        x_rec_debug_val = sess.run(recon_tensors, feed_dict={images_tensor: x_debug_test})
+        # x_adv_sub_val = sess.run(x_adv_sub, feed_dict={images_tensor: x_debug_test})
+        # x_rec_debug_val = sess.run(recon_tensors, feed_dict={images_tensor: x_debug_test})
         x_rec_orig_val = sess.run(x_rec_orig, feed_dict={images_tensor: x_debug_test})
         #sess.run(tf.local_variables_initializer())
         #x_rec_debug_val, x_rec_orig_val = sess.run([reconstructed_tensors, x_rec_orig], feed_dict={images_tensor: x_debug_test})
 
-        save_images_files(x_adv_sub_val, output_dir=debug_dir,
-                          postfix='adv')
+        # save_images_files(x_adv_sub_val, output_dir=debug_dir,
+        #                   postfix='adv')
 
         postfix = 'gen_rec'
-        save_images_files(x_rec_debug_val, output_dir=debug_dir,
-                          postfix=postfix)
-        save_images_files(x_debug_test, output_dir=debug_dir,
-                          postfix='orig')
+        # save_images_files(x_rec_debug_val, output_dir=debug_dir,
+        #                   postfix=postfix)
+        # save_images_files(x_debug_test, output_dir=debug_dir,
+        #                   postfix='orig')
         save_images_files(x_rec_orig_val, output_dir=debug_dir, postfix='orig_rec')
 
     if gan_defense_flag:
