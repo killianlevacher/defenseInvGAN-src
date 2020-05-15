@@ -320,11 +320,14 @@ class DefenseGANv2(AbstractModel):
         samples = self.sess.run(
             self.x_hat_sample, feed_dict={self.encoder_training: False, self.discriminator_training: False},
         )
-        self.save_image(samples, 'sanity_check.png')
 
+        # self.save_image(samples, 'sanity_check.png')
+
+        # Killian - purposely reducing max_train_iters for a dummy model creation original was 20000
+        max_train_iters = 200
         for iteration in range(cur_iter, max_train_iters):
             start_time = time.time()
-            _data = data_generator.next()
+            _data = next(data_generator)
 
             # Discriminator update
             for _ in range(self.disc_train_iter):
@@ -359,19 +362,21 @@ class DefenseGANv2(AbstractModel):
                     },
                 )
 
-            tflib.plot.plot(
-                '{}/train encoder cost'.format(self.debug_dir), loss,
-            )
-            tflib.plot.plot(
-                '{}/time'.format(self.debug_dir), time.time() - start_time,
-            )
+            # Killian: unnecessary code creating python 2 errors
+            # tflib.plot.plot(
+            #     '{}/train encoder cost'.format(self.debug_dir), loss,
+            # )
+            # tflib.plot.plot(
+            #     '{}/time'.format(self.debug_dir), time.time() - start_time,
+            # )
 
-            if (iteration < 5) or (iteration % 100 == 99):
-                tflib.plot.flush()
+            # if (iteration < 5) or (iteration % 100 == 99):
+            #     tflib.plot.flush()
 
             self.sess.run(step_inc)
 
-            if iteration % 100 == 1:
+            if iteration % 10 == 1:
+            # if iteration % 100 == 1:
                 summaries = sess.run(
                     self.merged_summary_op,
                     feed_dict={
@@ -384,7 +389,8 @@ class DefenseGANv2(AbstractModel):
                     summaries, global_step=iteration,
                 )
 
-            if iteration % 1000 == 999:
+            if iteration % 100 == 99:
+            # if iteration % 1000 == 999:
                 x_hat, x = sess.run(
                     [self.enc_reconstruction, self.real_data],
                     feed_dict={
@@ -393,8 +399,9 @@ class DefenseGANv2(AbstractModel):
                         self.discriminator_training: False,
                     },
                 )
-                self.save_image(x_hat, 'x_hat_{}.png'.format(iteration))
-                self.save_image(x, 'x_{}.png'.format(iteration))
+                # Killian causing crash due to floating point number
+                # self.save_image(x_hat, 'x_hat_{}.png'.format(iteration))
+                # self.save_image(x, 'x_{}.png'.format(iteration))
                 self.save(checkpoint_dir=ckpt_dir, global_step=global_step)
 
             tflib.plot.tick()

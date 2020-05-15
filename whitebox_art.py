@@ -203,6 +203,7 @@ def whitebox(gan, rec_data_path=None, batch_size=128, learning_rate=0.001,
     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
         model = model(input_shape=x_shape, nb_classes=train_labels.shape[1])
 
+    #TODO Killian this is what makes this whitebox. It's geting the parameters of the model and it's predictions
     used_vars = model.get_params()
     preds_train = model.get_logits(images_pl_transformed, dropout=True)
     preds_eval = model.get_logits(images_pl_transformed)
