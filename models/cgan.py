@@ -48,9 +48,13 @@ class DefenseCGAN(AbstractModel):
                               'attribute', 'use_encoder_init',
                               'discriminator_lr', 'generator_lr']
 
-        self.dataset_name = None  # Name of the datsaet.
-        self.num_classes = None  # Number of classes.
-        self.batch_size = 32  # Batch size for training the GAN.
+        self.dataset_name = "mnist"  # Name of the datsaet.
+        #Killian self.dataset_name = None  # Name of the datsaet.
+
+        self.num_classes = 10  # Number of classes.
+        # Killian self.num_classes = None  # Number of classes.
+        self.batch_size = 30  # Batch size for training the GAN.
+        # self.batch_size = 32  # Batch size for training the GAN.
         self.test_batch_size = 20  # Batch size for test time.
         self.use_bn = True  # Use batchnorm in the discriminator and generator.
         self.use_resblock = False  # Use resblocks in DefenseGAN.
@@ -59,7 +63,9 @@ class DefenseCGAN(AbstractModel):
         self.gradient_penalty_lambda = 10.0  # Gradient penalty scale.
         self.train_iters = 200000  # Number of training iterations.
         self.critic_iters = 5  # Critic iterations per training step.
-        self.latent_dim = None  # The dimension of the latent vectors.
+
+        self.latent_dim = 128  # Killian The dimension of the latent vectors.
+        # self.latent_dim = None  # The dimension of the latent vectors.
         self.net_dim = None  # The complexity of network per layer.
         self.input_transform_type = 0  # The normalization used for the inputs.
         self.debug = False  # Debug info will be printed.
@@ -83,9 +89,11 @@ class DefenseCGAN(AbstractModel):
 
         # calls _build() and _loss()
         # generator_vars and encoder_vars are created
-        super(DefenseCGAN, self).__init__(default_attributes,
-                                             test_mode=test_mode,
-                                             verbose=verbose, cfg=cfg, **args)
+        super(DefenseCGAN, self).__init__(test_mode=test_mode,
+                                          verbose=verbose, cfg=cfg, **args)
+        # super(DefenseCGAN, self).__init__(default_attributes,
+        #                                      test_mode=test_mode,
+        #                                      verbose=verbose, cfg=cfg, **args)
         self.save_var_prefixes = ['Generator', 'Discriminator']
         self._load_dataset()
 
@@ -227,12 +235,12 @@ class DefenseCGAN(AbstractModel):
         global_step = self.global_step
         ckpt_dir = self.checkpoint_dir
 
-        for iteration in xrange(cur_iter, max_train_iters):
+        for iteration in range(cur_iter, max_train_iters):
             start_time = time.time()
 
             _ = sess.run(self.gen_train_op)
 
-            for i in xrange(self.critic_iters):
+            for i in range(self.critic_iters):
                 _data, _target = gen.next()
                 _disc_cost, _, summaries = sess.run(
                     [self.discriminator_cost, self.disc_train_op, self.merged_summary_op],

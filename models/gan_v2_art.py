@@ -301,6 +301,7 @@ class DefenseGANv2(AbstractModel):
             var_list=self.encoder_vars,
         )
 
+
     def _inf_train_gen(self):
         """A generator function for input training data."""
         while True:

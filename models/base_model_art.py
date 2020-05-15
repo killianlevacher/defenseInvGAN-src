@@ -83,11 +83,20 @@ class AbstractModel(object):
 
         local_vals = locals()
         args.update(local_vals)
+
         for attr in default_properties:
             if attr in args.keys():
                 self._set_attr(attr, args[attr])
             else:
                 self._set_attr(attr, None)
+
+        #Killian temporarily hardcoding these values here
+        self.rec_loss_scale = 100.0
+        self.rec_margin = 0.05
+        self.rec_disc_loss_scale = 1.0
+        self.latent_reg_loss_scale = 1.0
+        self.enc_disc_lr = 1e-5
+        ###########
 
         # Runtime attributes.
         self.saver = None

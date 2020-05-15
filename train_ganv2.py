@@ -19,11 +19,63 @@ import argparse
 import sys
 
 import tensorflow as tf
-from models.cgan import DefenseCGAN
+# from models.cgan import DefenseCGAN
+from models.gan_v2_art import DefenseGANv2
 from utils.config import load_config
 from utils.reconstruction import reconstruct_dataset, save_ds, encoder_reconstruct
 from utils.metrics import compute_inception_score, save_mse
+from utils.util_art import get_generator_fn
 import numpy as np
+
+#Killian added
+cfg = {'TYPE': 'inv',
+       'MODE': 'hingegan',
+       # 'BATCH_SIZE': batch_size,
+       'USE_BN': True,
+       'USE_RESBLOCK': False,
+       'LATENT_DIM': 128,
+       'GRADIENT_PENALTY_LAMBDA': 10.0,
+       'OUTPUT_DIR': 'output',
+       'NET_DIM': 64,
+       'TRAIN_ITERS': 20000,
+       'DISC_LAMBDA': 0.0,
+       'TV_LAMBDA': 0.0,
+       'ATTRIBUTE': None,
+       'TEST_BATCH_SIZE': 20,
+       'NUM_GPUS': 1,
+       'INPUT_TRANSFORM_TYPE': 0,
+       'ENCODER_LR': 0.0002,
+       'GENERATOR_LR': 0.0001,
+       'DISCRIMINATOR_LR': 0.0004,
+       'DISCRIMINATOR_REC_LR': 0.0004,
+       'USE_ENCODER_INIT': True,
+       'ENCODER_LOSS_TYPE': 'margin',
+       'REC_LOSS_SCALE': 100.0,
+       'REC_DISC_LOSS_SCALE': 1.0,
+       'LATENT_REG_LOSS_SCALE': 0.5,
+       'REC_MARGIN': 0.02,
+       'ENC_DISC_TRAIN_ITER': 0,
+       'ENC_TRAIN_ITER': 1,
+       'DISC_TRAIN_ITER': 1,
+       'GENERATOR_INIT_PATH': 'defence_gan/output/gans/mnist',
+       'ENCODER_INIT_PATH': 'none',
+       'ENC_DISC_LR': 1e-05,
+       'NO_TRAINING_IMAGES': True,
+       'GEN_SAMPLES_DISC_LOSS_SCALE': 1.0,
+       'LATENTS_TO_Z_LOSS_SCALE': 1.0,
+       'REC_CYCLED_LOSS_SCALE': 100.0,
+       'GEN_SAMPLES_FAKING_LOSS_SCALE': 1.0,
+       'DATASET_NAME': 'mnist',
+       'ARCH_TYPE': 'mnist',
+       'REC_ITERS': 200,
+       'REC_LR': 0.01,
+       'REC_RR': 1,
+       'IMAGE_DIM': [28, 28, 1],
+       'INPUR_TRANSFORM_TYPE': 1,
+       'BPDA_ENCODER_CP_PATH': 'defence_gan/output/gans_inv_notrain/mnist',
+       'BPDA_GENERATOR_INIT_PATH': 'defence_gan/output/gans/mnist',
+       'cfg_path': 'experiments/cfgs/gans_inv_notrain/mnist.yml'
+       }
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -40,8 +92,11 @@ def parse_args():
 def main(cfg, *args):
     FLAGS = tf.app.flags.FLAGS
     test_mode = not (FLAGS.is_train or FLAGS.train_encoder)
-    gan = DefenseCGAN(cfg=cfg, test_mode=test_mode)
-
+    # gan = DefenseGANv2(cfg=cfg, test_mode=test_mode)
+    gan = DefenseGANv2(
+        get_generator_fn(cfg['DATASET_NAME'], cfg['USE_RESBLOCK']), cfg=cfg,
+        test_mode=test_mode,
+    )
 
     if FLAGS.is_train:
         gan.train()

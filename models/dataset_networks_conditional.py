@@ -113,6 +113,8 @@ def cifar10_discriminator_conditional(x, target_class, num_classes, update_colle
         return tf.reshape(output, [-1])
 
 
+
+
 GENERATOR_DICT = {'mnist': [mnist_generator_conditional],
                   'f-mnist': [mnist_generator_conditional],
                   'cifar-10': [cifar10_generator_conditional],

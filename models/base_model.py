@@ -97,7 +97,8 @@ class AbstractModel(object):
         self.is_training_enc = tf.placeholder(dtype=tf.bool)
         self.save_vars = {}
         self.save_var_prefixes = []
-        self.dataset = None
+        self.dataset = "mnist"
+        #Killian self.dataset = None
         self.test_mode = test_mode
 
         self._set_checkpoint_dir()
